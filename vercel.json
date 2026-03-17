@@ -9,6 +9,7 @@
   },
   "rewrites": [
     { "source": "/api/proxy", "destination": "/api/proxy" },
+    { "source": "/dl", "destination": "/api/dl" },
     { "source": "/((?!api/).*)", "destination": "/index.html" }
   ]
 }
