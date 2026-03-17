@@ -3,11 +3,13 @@ export const config = {
 };
 
 export default async function handler(): Promise<Response> {
-  // Simple redirect to GitHub release - Downloader will follow it
+  // Redirect to GitHub raw release download
+  // GitHub releases follow redirects, Downloader handles 302
   return new Response(null, {
     status: 302,
     headers: {
-      'Location': 'https://github.com/Youkow69/8kpro-iptv/releases/download/v1.0.4/app-release.apk',
+      'Location': 'https://github.com/Youkow69/8kpro-iptv/releases/download/v1.0.5/8kpro.apk',
+      'Cache-Control': 'no-cache',
     },
   });
 }

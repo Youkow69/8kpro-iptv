@@ -67,7 +67,11 @@ export default async function handler(request: Request): Promise<Response> {
       const baseUrl = finalUrl.substring(0, finalUrl.lastIndexOf('/') + 1);
       const origin = new URL(finalUrl).origin;
 
-      // Rewrite segment/playlist URLs to go through proxy
+      // Determine the absolute proxy base URL from the incoming request
+      const reqUrl = new URL(request.url);
+      const proxyBase = reqUrl.origin + '/api/proxy';
+
+      // Rewrite segment/playlist URLs to go through proxy (always absolute for mobile compatibility)
       body = body.replace(/^(?!#)(.+)$/gm, (line) => {
         const trimmed = line.trim();
         if (!trimmed || trimmed.startsWith('#')) return line;
@@ -79,7 +83,7 @@ export default async function handler(request: Request): Promise<Response> {
         } else {
           absoluteUrl = baseUrl + trimmed;
         }
-        return '/api/proxy?url=' + encodeURIComponent(absoluteUrl);
+        return proxyBase + '?url=' + encodeURIComponent(absoluteUrl);
       });
 
       return new Response(body, {
