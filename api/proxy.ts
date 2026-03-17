@@ -76,7 +76,9 @@ export default async function handler(request: Request): Promise<Response> {
       const reqUrl = new URL(request.url);
       const proxyBase = reqUrl.origin + '/api/proxy';
 
-      // Rewrite segment/playlist URLs to go through proxy (always absolute for mobile compatibility)
+      // Rewrite segment/playlist URLs:
+      // - Sub-playlists (.m3u8) → go through proxy (may be behind Cloudflare)
+      // - Segments (.ts/.aac) → direct access (NOT proxied, to preserve IP consistency)
       body = body.replace(/^(?!#)(.+)$/gm, (line) => {
         const trimmed = line.trim();
         if (!trimmed || trimmed.startsWith('#')) return line;
@@ -88,7 +90,13 @@ export default async function handler(request: Request): Promise<Response> {
         } else {
           absoluteUrl = baseUrl + trimmed;
         }
-        return proxyBase + '?url=' + encodeURIComponent(absoluteUrl);
+        // Only proxy m3u8 playlists, NOT video/audio segments
+        const isPlaylist = absoluteUrl.includes('.m3u8');
+        if (isPlaylist) {
+          return proxyBase + '?url=' + encodeURIComponent(absoluteUrl);
+        }
+        // Segments: return direct URL (no proxy needed, not behind Cloudflare)
+        return absoluteUrl;
       });
 
       return new Response(body, {

@@ -158,13 +158,25 @@ export default function Player() {
         }
       });
     } else {
+      // For .ts streams and other formats: use native video element
       video.src = playerUrl;
-      video.addEventListener('loadeddata', () => setLoading(false));
-      video.addEventListener('error', () => {
+      const onCanPlay = () => {
         setLoading(false);
-        setError(t('player.error.video'));
-      });
+        video.play().catch(() => {});
+      };
+      const onError = () => {
+        setLoading(false);
+        setError(t('player.error.network'));
+      };
+      video.addEventListener('canplay', onCanPlay);
+      video.addEventListener('error', onError);
+      // Also try to play immediately
       video.play().catch(() => {});
+
+      return () => {
+        video.removeEventListener('canplay', onCanPlay);
+        video.removeEventListener('error', onError);
+      };
     }
 
     return () => {

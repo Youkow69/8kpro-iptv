@@ -103,7 +103,9 @@ export function getOriginalUrlFromProxy(proxyUrl: string): string | null {
 
 export function buildLiveStreamUrl(creds: XtreamCredentials, streamId: number): string {
   const server = creds.server.replace(/\/+$/, '');
-  const raw = `${server}/live/${creds.username}/${creds.password}/${streamId}.m3u8`;
+  // Use .ts format (continuous stream) instead of .m3u8 (segmented)
+  // because m3u8 segments have IP-bound tokens that break through proxy
+  const raw = `${server}/live/${creds.username}/${creds.password}/${streamId}.ts`;
   return proxyStreamUrl(raw);
 }
 
