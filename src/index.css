@@ -1,0 +1,53 @@
+@import "tailwindcss";
+
+@theme {
+  --color-surface: #141414;
+  --color-surface-light: #1c1c1c;
+  --color-surface-lighter: #2a2a2a;
+  --color-bg: #0a0a0a;
+  --color-accent: #d4a017;
+  --color-accent-hover: #f0c040;
+  --color-text-primary: #f0f0f0;
+  --color-text-secondary: #888888;
+
+  --animate-slide-in-right: slide-in-right 0.25s ease-out;
+  --animate-fade-in: fade-in 0.2s ease-out;
+}
+
+@keyframes slide-in-right {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: scale(0.98); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #2a2a2a #0a0a0a;
+}
+
+body {
+  margin: 0;
+  background-color: #0a0a0a;
+  color: #f0f0f0;
+  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+/* Smooth transitions for all interactive elements */
+button, a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Hide native video controls in fullscreen for custom overlay */
+video::-webkit-media-controls-overlay-play-button {
+  display: none;
+}

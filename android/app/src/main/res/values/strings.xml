@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">8K Pro</string>
+    <string name="title_activity_main">8K Pro</string>
+    <string name="package_name">com.pro8k.iptv</string>
+    <string name="custom_url_scheme">com.pro8k.iptv</string>
+</resources>
