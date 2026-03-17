@@ -1,8 +1,11 @@
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Player from './Player';
+import { useDpadNavigation } from '../hooks/useDpadNavigation';
 
 export default function Layout() {
+  useDpadNavigation();
+
   return (
     <div className="flex min-h-screen bg-bg">
       <Sidebar />
