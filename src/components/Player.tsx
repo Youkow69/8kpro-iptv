@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import Hls from 'hls.js';
+import mpegts from 'mpegts.js';
 import {
   X, Maximize, Minimize, Loader2, AlertCircle,
   List, ChevronUp, ChevronDown, Volume2, VolumeX,
@@ -24,6 +25,7 @@ export default function Player() {
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const hlsRef = useRef<Hls | null>(null);
+  const mpegtsRef = useRef<mpegts.Player | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const [loading, setLoading] = useState(true);
@@ -157,32 +159,68 @@ export default function Player() {
           }
         }
       });
-    } else {
-      // For .ts streams and other formats: use native video element
-      video.src = playerUrl;
-      const onCanPlay = () => {
+    } else if (playerUrl.includes('.ts') && mpegts.isSupported()) {
+      // For MPEG-TS streams: use mpegts.js
+      const player = mpegts.createPlayer({
+        type: 'mpegts',
+        url: playerUrl,
+        isLive: true,
+      }, {
+        enableWorker: true,
+        enableStashBuffer: true,
+        stashInitialSize: 128 * 1024,
+        liveBufferLatencyChasing: true,
+        liveBufferLatencyMaxLatency: 8,
+        liveBufferLatencyMinRemain: 2,
+      });
+      mpegtsRef.current = player;
+      player.attachMediaElement(video);
+      player.load();
+
+      let hasStarted = false;
+      player.on(mpegts.Events.ERROR, (_type: string, _detail: string, info: { msg?: string }) => {
+        // Only show error if we never got any data
+        if (!hasStarted) {
+          setLoading(false);
+          setError(t('player.error.network') + (info?.msg ? `: ${info.msg}` : ''));
+        }
+      });
+
+      video.addEventListener('canplay', () => {
+        hasStarted = true;
         setLoading(false);
         video.play().catch(() => {});
-      };
-      const onError = () => {
+      });
+
+      video.addEventListener('playing', () => {
+        hasStarted = true;
+        setLoading(false);
+        setError('');
+      });
+
+      player.play();
+    } else {
+      // Fallback: native video element
+      video.src = playerUrl;
+      video.addEventListener('canplay', () => {
+        setLoading(false);
+        video.play().catch(() => {});
+      });
+      video.addEventListener('error', () => {
         setLoading(false);
         setError(t('player.error.network'));
-      };
-      video.addEventListener('canplay', onCanPlay);
-      video.addEventListener('error', onError);
-      // Also try to play immediately
+      });
       video.play().catch(() => {});
-
-      return () => {
-        video.removeEventListener('canplay', onCanPlay);
-        video.removeEventListener('error', onError);
-      };
     }
 
     return () => {
       if (hlsRef.current) {
         hlsRef.current.destroy();
         hlsRef.current = null;
+      }
+      if (mpegtsRef.current) {
+        mpegtsRef.current.destroy();
+        mpegtsRef.current = null;
       }
     };
   }, [playerUrl]);

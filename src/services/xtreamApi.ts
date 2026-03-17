@@ -18,9 +18,11 @@ function isNative(): boolean {
   return !!cap.platform && cap.platform !== 'web';
 }
 
+const VERCEL_PROXY = 'https://iptv-smarters-vert.vercel.app/api/proxy';
+// Always use absolute URL — mpegts.js worker can't resolve relative URLs
 const PROXY = isNative()
-  ? 'https://iptv-smarters-vert.vercel.app/api/proxy'
-  : '/api/proxy';
+  ? VERCEL_PROXY
+  : (window.location.origin + '/api/proxy');
 
 function proxyUrl(creds: XtreamCredentials, params?: Record<string, string>) {
   const server = creds.server.replace(/\/+$/, '');
