@@ -47,7 +47,12 @@ button, a, input, select {
   -webkit-tap-highlight-color: transparent;
 }
 
-/* D-pad / keyboard focus styles for TV navigation */
+/* Smooth scroll everywhere */
+* {
+  scroll-behavior: smooth;
+}
+
+/* Focus styles for D-pad / keyboard / remote navigation - ALL devices */
 button:focus-visible,
 a:focus-visible,
 input:focus-visible,
@@ -57,6 +62,21 @@ select:focus-visible,
   outline-offset: 2px;
   border-radius: 8px;
   box-shadow: 0 0 12px rgba(212, 160, 23, 0.4);
+}
+
+/* Focus on tabIndex rows (channel list) */
+[tabindex="0"]:focus {
+  background-color: rgba(212, 160, 23, 0.12) !important;
+  outline: 2px solid rgba(212, 160, 23, 0.6);
+  outline-offset: -2px;
+  border-radius: 8px;
+}
+
+/* Scale focused grid items (VOD/Series cards) */
+.grid button:focus-visible {
+  transform: scale(1.06);
+  z-index: 10;
+  box-shadow: 0 0 24px rgba(212, 160, 23, 0.3);
 }
 
 /* TV-specific: larger focus ring */
@@ -73,26 +93,6 @@ select:focus-visible,
 .tv-mode a:focus-visible {
   transform: scale(1.05);
   z-index: 10;
-}
-
-/* TV mode: smooth scroll on all containers */
-.tv-mode * {
-  scroll-behavior: smooth;
-}
-
-/* TV mode: highlight focused row */
-.tv-mode [tabindex="0"]:focus {
-  background-color: rgba(212, 160, 23, 0.12);
-  outline: 2px solid rgba(212, 160, 23, 0.6);
-  outline-offset: -2px;
-  border-radius: 8px;
-}
-
-/* TV mode: scale focused grid items */
-.tv-mode .grid button:focus-visible {
-  transform: scale(1.06);
-  z-index: 10;
-  box-shadow: 0 0 24px rgba(212, 160, 23, 0.3);
 }
 
 /* Hide native video controls in fullscreen for custom overlay */

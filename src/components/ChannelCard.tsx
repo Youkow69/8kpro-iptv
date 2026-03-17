@@ -19,31 +19,31 @@ export default function ChannelCard({ stream, onClick, isLast }: Props) {
   const isFav = favorites.includes(stream.stream_id);
   const rowRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll into view when focused (TV D-pad navigation)
+  // Auto-scroll into view when focused (D-pad / keyboard navigation)
   const handleFocus = useCallback(() => {
-    if (isTV && rowRef.current) {
+    if (rowRef.current) {
       rowRef.current.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
     }
-  }, [isTV]);
+  }, []);
 
-  // On TV, pressing Enter/OK on the row should play
+  // Pressing Enter/OK plays the channel
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (isTV && (e.key === 'Enter' || e.key === ' ')) {
+    if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
       onClick();
     }
-  }, [isTV, onClick]);
+  }, [onClick]);
 
   return (
     <div
       ref={rowRef}
-      tabIndex={isTV ? 0 : undefined}
+      tabIndex={0}
       onFocus={handleFocus}
       onKeyDown={handleKeyDown}
-      className={`flex items-center gap-3 hover:bg-surface-light focus-within:bg-surface-light focus:bg-accent/10 focus:outline-none focus-visible:outline-2 focus-visible:outline-accent transition group cursor-pointer ${
+      onClick={onClick}
+      className={`flex items-center gap-3 hover:bg-surface-light focus:bg-accent/10 focus:outline-none transition group cursor-pointer ${
         isTV ? 'px-5 py-4' : 'px-4 py-3'
       }`}
-      onClick={onClick}
     >
       <ChannelLogo name={stream.name} size={isTV ? 'lg' : 'md'} />
       <div className="flex-1 min-w-0">
@@ -62,7 +62,7 @@ export default function ChannelCard({ stream, onClick, isLast }: Props) {
           </span>
         )}
         <button
-          tabIndex={isTV ? -1 : 0}
+          tabIndex={-1}
           onClick={(e) => {
             e.stopPropagation();
             toggleFavorite(stream.stream_id);
@@ -72,7 +72,7 @@ export default function ChannelCard({ stream, onClick, isLast }: Props) {
           } ${
             isFav
               ? 'text-yellow-400'
-              : 'text-text-secondary/30 hover:text-yellow-400 focus-visible:text-yellow-400 opacity-0 group-hover:opacity-100 group-focus:opacity-100 focus-visible:opacity-100'
+              : 'text-text-secondary/30 hover:text-yellow-400 opacity-0 group-hover:opacity-100 group-focus:opacity-100'
           }`}
           title={isFav ? t('removeFavorite') : t('addFavorite')}
         >
