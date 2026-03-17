@@ -75,6 +75,26 @@ select:focus-visible,
   z-index: 10;
 }
 
+/* TV mode: smooth scroll on all containers */
+.tv-mode * {
+  scroll-behavior: smooth;
+}
+
+/* TV mode: highlight focused row */
+.tv-mode [tabindex="0"]:focus {
+  background-color: rgba(212, 160, 23, 0.12);
+  outline: 2px solid rgba(212, 160, 23, 0.6);
+  outline-offset: -2px;
+  border-radius: 8px;
+}
+
+/* TV mode: scale focused grid items */
+.tv-mode .grid button:focus-visible {
+  transform: scale(1.06);
+  z-index: 10;
+  box-shadow: 0 0 24px rgba(212, 160, 23, 0.3);
+}
+
 /* Hide native video controls in fullscreen for custom overlay */
 video::-webkit-media-controls-overlay-play-button {
   display: none;

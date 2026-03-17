@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { useIsTV } from '../hooks/useIsTV';
 import ChannelLogo from './ChannelLogo';
 
@@ -13,11 +13,20 @@ interface Props {
 export default function MediaCard({ title, image, subtitle, rating, onClick }: Props) {
   const [imgFailed, setImgFailed] = useState(false);
   const isTV = useIsTV();
+  const cardRef = useRef<HTMLButtonElement>(null);
+
+  const handleFocus = useCallback(() => {
+    if (isTV && cardRef.current) {
+      cardRef.current.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
+  }, [isTV]);
 
   return (
     <button
+      ref={cardRef}
       onClick={onClick}
-      className="group text-left rounded-xl overflow-hidden bg-surface hover:bg-surface-light focus-visible:bg-surface-light transition transform hover:scale-[1.02] hover:shadow-xl focus-visible:scale-[1.03] focus-visible:shadow-xl"
+      onFocus={handleFocus}
+      className="group text-left rounded-xl overflow-hidden bg-surface hover:bg-surface-light focus-visible:bg-surface-light transition transform hover:scale-[1.02] hover:shadow-xl focus-visible:scale-[1.05] focus-visible:shadow-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
     >
       <div className="aspect-[2/3] bg-surface-lighter relative overflow-hidden">
         {image && !imgFailed ? (

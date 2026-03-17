@@ -1,3 +1,4 @@
+import { useRef, useCallback } from 'react';
 import { Search, Loader2 } from 'lucide-react';
 import type { Category } from '../types/xtream';
 import { useIsTV } from '../hooks/useIsTV';
@@ -44,26 +45,52 @@ export default function CategoryList({ categories, selected, onSelect, search, o
         ) : (
           <>
             {categories.map((cat) => (
-              <button
+              <CategoryButton
                 key={cat.category_id}
-                onClick={() => onSelect(cat.category_id)}
-                className={`w-full text-left rounded-lg transition flex items-center ${
-                  isTV
-                    ? 'text-base px-4 py-3 gap-3 focus-visible:bg-accent/15 focus-visible:text-accent'
-                    : 'text-sm px-3 py-2 gap-2.5'
-                } ${
-                  selected === cat.category_id
-                    ? 'bg-accent/15 text-accent font-medium'
-                    : 'text-text-secondary hover:bg-surface-light hover:text-text-primary'
-                }`}
-              >
-                <ChannelLogo name={cat.category_name} size="sm" />
-                <span className="truncate">{cat.category_name}</span>
-              </button>
+                cat={cat}
+                isSelected={selected === cat.category_id}
+                onSelect={onSelect}
+                isTV={isTV}
+              />
             ))}
           </>
         )}
       </div>
     </div>
+  );
+}
+
+function CategoryButton({ cat, isSelected, onSelect, isTV }: {
+  cat: Category;
+  isSelected: boolean;
+  onSelect: (id: string) => void;
+  isTV: boolean;
+}) {
+  const btnRef = useRef<HTMLButtonElement>(null);
+
+  const handleFocus = useCallback(() => {
+    if (isTV && btnRef.current) {
+      btnRef.current.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
+  }, [isTV]);
+
+  return (
+    <button
+      ref={btnRef}
+      onFocus={handleFocus}
+      onClick={() => onSelect(cat.category_id)}
+      className={`w-full text-left rounded-lg transition flex items-center ${
+        isTV
+          ? 'text-base px-4 py-3 gap-3 focus:bg-accent/15 focus:text-accent focus:outline-none focus-visible:outline-2 focus-visible:outline-accent'
+          : 'text-sm px-3 py-2 gap-2.5'
+      } ${
+        isSelected
+          ? 'bg-accent/15 text-accent font-medium'
+          : 'text-text-secondary hover:bg-surface-light hover:text-text-primary'
+      }`}
+    >
+      <ChannelLogo name={cat.category_name} size="sm" />
+      <span className="truncate">{cat.category_name}</span>
+    </button>
   );
 }

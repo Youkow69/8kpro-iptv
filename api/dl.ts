@@ -4,7 +4,7 @@ export const config = {
 
 export default async function handler(): Promise<Response> {
   // Fetch the APK from GitHub and stream it directly (avoids redirect issues with Downloader)
-  const ghUrl = 'https://github.com/Youkow69/8kpro-iptv/releases/download/v1.0.3/app-release.apk';
+  const ghUrl = 'https://github.com/Youkow69/8kpro-iptv/releases/download/v1.0.4/app-release.apk';
 
   const res = await fetch(ghUrl, {
     redirect: 'follow',
