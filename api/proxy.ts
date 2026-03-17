@@ -33,13 +33,18 @@ export default async function handler(request: Request): Promise<Response> {
     });
 
     const targetOrigin = targetUrl.origin;
+    const isSegment = target.includes('.ts') || target.includes('.aac') || target.includes('.mp4');
     const fetchHeaders: Record<string, string> = {
       'User-Agent':
         'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
       Accept: '*/*',
-      Referer: targetOrigin + '/',
-      Origin: targetOrigin,
     };
+    // Only send Referer/Origin for non-segment requests (API, m3u8)
+    // HLS segment servers often reject requests with wrong Referer
+    if (!isSegment) {
+      fetchHeaders['Referer'] = targetOrigin + '/';
+      fetchHeaders['Origin'] = targetOrigin;
+    }
     const rangeHeader = request.headers.get('range');
     if (rangeHeader) {
       fetchHeaders['Range'] = rangeHeader;
