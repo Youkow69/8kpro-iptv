@@ -8,6 +8,7 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import SeriesDetail from '../components/SeriesDetail';
 import type { Series } from '../types/xtream';
 import { useTranslation } from '../i18n/useTranslation';
+import { useIsTV } from '../hooks/useIsTV';
 
 export default function SeriesPage() {
   const credentials = useAuthStore((s) => s.credentials)!;
@@ -17,6 +18,7 @@ export default function SeriesPage() {
     selectedSeriesCategory, setSelectedSeriesCategory,
   } = useIptvStore();
   const { t } = useTranslation();
+  const isTV = useIsTV();
 
   const [loading, setLoading] = useState(false);
   const [loadingCats, setLoadingCats] = useState(false);
@@ -78,7 +80,9 @@ export default function SeriesPage() {
             {t('series.noResults')}
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+          <div className={`grid gap-4 ${
+            isTV ? 'grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' : 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5'
+          }`}>
             {filtered.map((s) => (
               <MediaCard
                 key={s.series_id}

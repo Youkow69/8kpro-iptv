@@ -8,6 +8,7 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import VodDetail from '../components/VodDetail';
 import type { VodStream } from '../types/xtream';
 import { useTranslation } from '../i18n/useTranslation';
+import { useIsTV } from '../hooks/useIsTV';
 
 export default function VodPage() {
   const credentials = useAuthStore((s) => s.credentials)!;
@@ -18,6 +19,7 @@ export default function VodPage() {
     openPlayer,
   } = useIptvStore();
   const { t } = useTranslation();
+  const isTV = useIsTV();
 
   const [loading, setLoading] = useState(false);
   const [loadingCats, setLoadingCats] = useState(false);
@@ -90,7 +92,9 @@ export default function VodPage() {
             {t('vod.noResults')}
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+          <div className={`grid gap-4 ${
+            isTV ? 'grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' : 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5'
+          }`}>
             {filtered.map((vod) => (
               <MediaCard
                 key={vod.stream_id}

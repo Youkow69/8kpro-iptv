@@ -43,8 +43,36 @@ body {
 }
 
 /* Smooth transitions for all interactive elements */
-button, a {
+button, a, input, select {
   -webkit-tap-highlight-color: transparent;
+}
+
+/* D-pad / keyboard focus styles for TV navigation */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+[tabindex]:focus-visible {
+  outline: 3px solid #d4a017;
+  outline-offset: 2px;
+  border-radius: 8px;
+  box-shadow: 0 0 12px rgba(212, 160, 23, 0.4);
+}
+
+/* TV-specific: larger focus ring */
+.tv-mode button:focus-visible,
+.tv-mode a:focus-visible,
+.tv-mode [tabindex]:focus-visible {
+  outline-width: 4px;
+  outline-offset: 4px;
+  box-shadow: 0 0 20px rgba(212, 160, 23, 0.5);
+}
+
+/* TV mode: scale focused element */
+.tv-mode button:focus-visible,
+.tv-mode a:focus-visible {
+  transform: scale(1.05);
+  z-index: 10;
 }
 
 /* Hide native video controls in fullscreen for custom overlay */

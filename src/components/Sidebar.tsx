@@ -2,6 +2,7 @@ import { NavLink } from 'react-router-dom';
 import { Radio, Film, Clapperboard, Settings } from 'lucide-react';
 import { useIptvStore } from '../store/iptvStore';
 import { useTranslation } from '../i18n/useTranslation';
+import { useIsTV } from '../hooks/useIsTV';
 
 const linkDefs = [
   { to: '/live', labelKey: 'nav.live', icon: Radio },
@@ -25,9 +26,57 @@ export default function Sidebar() {
   const playerTitle = useIptvStore((s) => s.playerTitle);
   const isPlaying = !!playerTitle;
   const { t } = useTranslation();
+  const isTV = useIsTV();
 
   const links = linkDefs.map((l) => ({ ...l, label: t(l.labelKey) }));
 
+  // TV mode: full left sidebar always visible with large items
+  if (isTV) {
+    return (
+      <aside className="flex flex-col w-64 bg-surface min-h-screen shrink-0 border-r border-surface-lighter/50">
+        <div className="flex items-center gap-3 px-5 py-6 border-b border-surface-lighter">
+          <Logo size="md" />
+          <span className="font-bold text-xl text-text-primary tracking-tight">8K Pro</span>
+        </div>
+        <nav className="flex-1 py-4 space-y-2 px-3">
+          {links.map((l) => (
+            <NavLink
+              key={l.to}
+              to={l.to}
+              className={({ isActive }) =>
+                `flex items-center gap-4 px-4 py-4 rounded-xl transition text-lg font-medium ${
+                  isActive
+                    ? 'bg-accent/15 text-accent'
+                    : 'text-text-secondary hover:bg-surface-light hover:text-text-primary focus-visible:bg-surface-light focus-visible:text-text-primary'
+                }`
+              }
+            >
+              <l.icon className="w-7 h-7 shrink-0" />
+              <span>{l.label}</span>
+            </NavLink>
+          ))}
+        </nav>
+
+        {isPlaying && (
+          <div className="px-4 py-4 border-t border-surface-lighter">
+            <div className="bg-surface-light rounded-xl px-4 py-3 flex items-center gap-3">
+              <div className="flex gap-0.5 items-end shrink-0">
+                <span className="w-1 h-3 bg-accent rounded-full animate-bounce [animation-delay:0ms]" />
+                <span className="w-1 h-4 bg-accent rounded-full animate-bounce [animation-delay:150ms]" />
+                <span className="w-1 h-2 bg-accent rounded-full animate-bounce [animation-delay:300ms]" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs text-text-secondary uppercase tracking-wider">{t('player.nowPlaying')}</p>
+                <p className="text-sm text-text-primary font-medium truncate">{playerTitle}</p>
+              </div>
+            </div>
+          </div>
+        )}
+      </aside>
+    );
+  }
+
+  // Phone/Desktop mode (original)
   return (
     <>
       {/* Desktop sidebar */}
@@ -55,7 +104,6 @@ export default function Sidebar() {
           ))}
         </nav>
 
-        {/* Now playing indicator */}
         {isPlaying && (
           <div className="px-3 py-3 border-t border-surface-lighter">
             <div className="bg-surface-light rounded-xl px-3 py-2.5 flex items-center gap-2.5">

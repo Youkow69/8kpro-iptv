@@ -1,6 +1,7 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuthStore } from './store/authStore';
+import { useIsTV } from './hooks/useIsTV';
 import Layout from './components/Layout';
 import LoginPage from './pages/LoginPage';
 import LivePage from './pages/LivePage';
@@ -18,6 +19,16 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 export default function App() {
   const [showSplash, setShowSplash] = useState(true);
   const handleSplashFinish = useCallback(() => setShowSplash(false), []);
+  const isTV = useIsTV();
+
+  // Add tv-mode class to root element for TV-specific CSS
+  useEffect(() => {
+    if (isTV) {
+      document.documentElement.classList.add('tv-mode');
+    } else {
+      document.documentElement.classList.remove('tv-mode');
+    }
+  }, [isTV]);
 
   return (
     <>

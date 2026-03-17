@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useIsTV } from '../hooks/useIsTV';
 import ChannelLogo from './ChannelLogo';
 
 interface Props {
@@ -11,11 +12,12 @@ interface Props {
 
 export default function MediaCard({ title, image, subtitle, rating, onClick }: Props) {
   const [imgFailed, setImgFailed] = useState(false);
+  const isTV = useIsTV();
 
   return (
     <button
       onClick={onClick}
-      className="group text-left rounded-xl overflow-hidden bg-surface hover:bg-surface-light transition transform hover:scale-[1.02] hover:shadow-xl"
+      className="group text-left rounded-xl overflow-hidden bg-surface hover:bg-surface-light focus-visible:bg-surface-light transition transform hover:scale-[1.02] hover:shadow-xl focus-visible:scale-[1.03] focus-visible:shadow-xl"
     >
       <div className="aspect-[2/3] bg-surface-lighter relative overflow-hidden">
         {image && !imgFailed ? (
@@ -32,17 +34,21 @@ export default function MediaCard({ title, image, subtitle, rating, onClick }: P
           </div>
         )}
         {rating && Number(rating) > 0 && (
-          <span className="absolute top-2 right-2 bg-black/70 text-yellow-400 text-xs px-2 py-0.5 rounded-md font-medium">
+          <span className={`absolute top-2 right-2 bg-black/70 text-yellow-400 px-2 py-0.5 rounded-md font-medium ${
+            isTV ? 'text-sm' : 'text-xs'
+          }`}>
             ★ {Number(rating).toFixed(1)}
           </span>
         )}
       </div>
-      <div className="p-3">
-        <p className="text-text-primary text-sm font-medium truncate group-hover:text-accent transition">
+      <div className={isTV ? 'p-4' : 'p-3'}>
+        <p className={`text-text-primary font-medium truncate group-hover:text-accent group-focus-visible:text-accent transition ${
+          isTV ? 'text-base' : 'text-sm'
+        }`}>
           {title}
         </p>
         {subtitle && (
-          <p className="text-text-secondary text-xs mt-1 truncate">{subtitle}</p>
+          <p className={`text-text-secondary mt-1 truncate ${isTV ? 'text-sm' : 'text-xs'}`}>{subtitle}</p>
         )}
       </div>
     </button>

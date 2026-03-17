@@ -7,6 +7,7 @@ import ChannelCard from '../components/ChannelCard';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { Star } from 'lucide-react';
 import { useTranslation } from '../i18n/useTranslation';
+import { useIsTV } from '../hooks/useIsTV';
 
 export default function LivePage() {
   const credentials = useAuthStore((s) => s.credentials)!;
@@ -18,6 +19,7 @@ export default function LivePage() {
     favorites,
   } = useIptvStore();
   const { t } = useTranslation();
+  const isTV = useIsTV();
 
   const [loading, setLoading] = useState(false);
   const [loadingCats, setLoadingCats] = useState(false);
@@ -71,19 +73,21 @@ export default function LivePage() {
       />
       <div className="flex-1 bg-surface rounded-xl overflow-hidden flex flex-col max-h-[calc(100vh-100px)] md:max-h-[calc(100vh-32px)]">
         {/* Favorites filter bar */}
-        <div className="flex items-center gap-2 px-4 py-2 border-b border-surface-lighter">
+        <div className={`flex items-center gap-2 border-b border-surface-lighter ${isTV ? 'px-5 py-3' : 'px-4 py-2'}`}>
           <button
             onClick={() => setShowFavsOnly((s) => !s)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition ${
+            className={`flex items-center gap-1.5 rounded-lg font-medium transition ${
+              isTV ? 'px-4 py-2 text-sm' : 'px-3 py-1.5 text-xs'
+            } ${
               showFavsOnly
                 ? 'bg-yellow-400/15 text-yellow-400'
-                : 'text-text-secondary hover:text-text-primary hover:bg-surface-light'
+                : 'text-text-secondary hover:text-text-primary hover:bg-surface-light focus-visible:text-text-primary focus-visible:bg-surface-light'
             }`}
           >
-            <Star className={`w-3.5 h-3.5 ${showFavsOnly ? 'fill-yellow-400' : ''}`} />
+            <Star className={`${isTV ? 'w-5 h-5' : 'w-3.5 h-3.5'} ${showFavsOnly ? 'fill-yellow-400' : ''}`} />
             {t('live.favorites')}
           </button>
-          <span className="text-text-secondary text-xs ml-auto">
+          <span className={`text-text-secondary ml-auto ${isTV ? 'text-sm' : 'text-xs'}`}>
             {filtered.length} {t('live.channels')}
           </span>
         </div>
