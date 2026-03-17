@@ -21,10 +21,12 @@ android {
     }
     signingConfigs {
         release {
-            storeFile file('../../android/8kpro.keystore')
+            storeFile file('../8kpro.keystore')
             storePassword '8kpro2024'
             keyAlias '8kpro'
             keyPassword '8kpro2024'
+            v1SigningEnabled true
+            v2SigningEnabled true
         }
     }
     buildTypes {
