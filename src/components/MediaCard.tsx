@@ -1,64 +1,79 @@
 import { useState, useRef, useCallback } from 'react';
 import { useIsTV } from '../hooks/useIsTV';
 import ChannelLogo from './ChannelLogo';
+import { Play, Star } from 'lucide-react';
+import { playClick } from '../services/sounds';
 
 interface Props {
-  title: string;
+  name: string;
   image?: string;
-  subtitle?: string;
   rating?: string;
   onClick: () => void;
 }
 
-export default function MediaCard({ title, image, subtitle, rating, onClick }: Props) {
-  const [imgFailed, setImgFailed] = useState(false);
+export default function MediaCard({ name, image, rating, onClick }: Props) {
   const isTV = useIsTV();
-  const cardRef = useRef<HTMLButtonElement>(null);
+  const [imgLoaded, setImgLoaded] = useState(false);
+  const [imgError, setImgError] = useState(false);
+  const ref = useRef<HTMLButtonElement>(null);
 
-  const handleFocus = useCallback(() => {
-    if (isTV && cardRef.current) {
-      cardRef.current.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  const onFocus = useCallback(() => {
+    if (isTV && ref.current) {
+      ref.current.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' });
     }
   }, [isTV]);
 
   return (
     <button
-      ref={cardRef}
-      onClick={onClick}
-      onFocus={handleFocus}
-      className="group text-left rounded-xl overflow-hidden bg-surface hover:bg-surface-light focus-visible:bg-surface-light transition transform hover:scale-[1.02] hover:shadow-xl focus-visible:scale-[1.05] focus-visible:shadow-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+      ref={ref}
+      onClick={() => { playClick(); onClick(); }}
+      onFocus={onFocus}
+      className={`group relative rounded-xl overflow-hidden transition-all card-hover focus-visible:ring-2 focus-visible:ring-accent ${
+        isTV ? 'aspect-[2/3]' : 'aspect-[2/3]'
+      }`}
     >
-      <div className="aspect-[2/3] bg-surface-lighter relative overflow-hidden">
-        {image && !imgFailed ? (
+      {/* Image / Skeleton */}
+      {image && !imgError ? (
+        <>
+          {!imgLoaded && <div className="absolute inset-0 skeleton" />}
           <img
             src={image}
-            alt={title}
-            className="w-full h-full object-cover"
+            alt={name}
+            className={`w-full h-full object-cover transition-all duration-500 ${imgLoaded ? 'opacity-100' : 'opacity-0'} group-hover:scale-110`}
             loading="lazy"
-            onError={() => setImgFailed(true)}
+            onLoad={() => setImgLoaded(true)}
+            onError={() => setImgError(true)}
           />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-surface to-surface-lighter">
-            <ChannelLogo name={title} size="lg" />
-          </div>
-        )}
-        {rating && Number(rating) > 0 && (
-          <span className={`absolute top-2 right-2 bg-black/70 text-yellow-400 px-2 py-0.5 rounded-md font-medium ${
-            isTV ? 'text-sm' : 'text-xs'
-          }`}>
-            ★ {Number(rating).toFixed(1)}
-          </span>
-        )}
+        </>
+      ) : (
+        <div className="w-full h-full bg-gradient-to-br from-surface via-surface-light to-surface-lighter flex items-center justify-center">
+          <ChannelLogo name={name} size="lg" />
+        </div>
+      )}
+
+      {/* Gradient overlay */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
+
+      {/* Play button on hover */}
+      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-all">
+        <div className="w-14 h-14 rounded-full bg-accent/90 backdrop-blur-sm flex items-center justify-center shadow-lg shadow-accent/30 transform scale-75 group-hover:scale-100 transition-transform">
+          <Play className="w-7 h-7 text-black fill-black ml-0.5" />
+        </div>
       </div>
-      <div className={isTV ? 'p-4' : 'p-3'}>
-        <p className={`text-text-primary font-medium truncate group-hover:text-accent group-focus-visible:text-accent transition ${
-          isTV ? 'text-base' : 'text-sm'
-        }`}>
-          {title}
+
+      {/* Rating badge */}
+      {rating && parseFloat(rating) > 0 && (
+        <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-sm text-accent text-[11px] font-bold px-2 py-0.5 rounded-md flex items-center gap-1 badge-glow">
+          <Star className="w-3 h-3 fill-accent" />
+          {parseFloat(rating).toFixed(1)}
+        </div>
+      )}
+
+      {/* Title */}
+      <div className="absolute bottom-0 left-0 right-0 p-3">
+        <p className={`text-white font-semibold truncate ${isTV ? 'text-sm' : 'text-xs'}`}>
+          {name}
         </p>
-        {subtitle && (
-          <p className={`text-text-secondary mt-1 truncate ${isTV ? 'text-sm' : 'text-xs'}`}>{subtitle}</p>
-        )}
       </div>
     </button>
   );

@@ -9,6 +9,10 @@ import SeriesDetail from '../components/SeriesDetail';
 import type { Series } from '../types/xtream';
 import { useTranslation } from '../i18n/useTranslation';
 import { useIsTV } from '../hooks/useIsTV';
+import { ArrowUpDown, Clapperboard } from 'lucide-react';
+import { playClick } from '../services/sounds';
+
+type SortMode = 'default' | 'name' | 'rating';
 
 export default function SeriesPage() {
   const credentials = useAuthStore((s) => s.credentials)!;
@@ -24,6 +28,7 @@ export default function SeriesPage() {
   const [loadingCats, setLoadingCats] = useState(false);
   const [search, setSearch] = useState('');
   const [selectedSeries, setSelectedSeries] = useState<Series | null>(null);
+  const [sort, setSort] = useState<SortMode>('default');
 
   useEffect(() => {
     if (seriesCategories.length === 0) {
@@ -49,16 +54,25 @@ export default function SeriesPage() {
       .finally(() => setLoading(false));
   }, [credentials, selectedSeriesCategory, setSeriesList]);
 
-  const filtered = seriesList.filter((s) =>
+  let filtered = seriesList.filter((s) =>
     s.name.toLowerCase().includes(search.toLowerCase())
   );
+
+  if (sort === 'name') filtered = [...filtered].sort((a, b) => a.name.localeCompare(b.name));
+  else if (sort === 'rating') filtered = [...filtered].sort((a, b) => (parseFloat(b.rating || '0') - parseFloat(a.rating || '0')));
 
   if (selectedSeries) {
     return <SeriesDetail series={selectedSeries} onBack={() => setSelectedSeries(null)} />;
   }
 
+  const sortOptions: { id: SortMode; label: string }[] = [
+    { id: 'default', label: 'Defaut' },
+    { id: 'name', label: 'A-Z' },
+    { id: 'rating', label: 'Note' },
+  ];
+
   return (
-    <div className="flex flex-col md:flex-row gap-4 p-4 flex-1">
+    <div className="flex flex-col md:flex-row gap-4 p-4 flex-1 page-enter">
       <CategoryList
         categories={seriesCategories}
         selected={selectedSeriesCategory}
@@ -69,6 +83,27 @@ export default function SeriesPage() {
         loading={loadingCats}
       />
       <div className="flex-1 overflow-y-auto max-h-[calc(100vh-100px)] md:max-h-[calc(100vh-32px)]">
+        {/* Sort bar */}
+        <div className="flex items-center gap-2 mb-4 px-1">
+          <ArrowUpDown className="w-3.5 h-3.5 text-text-secondary" />
+          <div className="flex gap-1 bg-surface-light/50 rounded-lg p-0.5">
+            {sortOptions.map((s) => (
+              <button
+                key={s.id}
+                onClick={() => { playClick(); setSort(s.id); }}
+                className={`px-3 py-1 rounded-md text-[11px] font-medium transition-all ${
+                  sort === s.id ? 'bg-accent text-black' : 'text-text-secondary hover:text-text-primary'
+                }`}
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>
+          <span className="ml-auto text-text-secondary text-xs flex items-center gap-1">
+            <Clapperboard className="w-3 h-3" /> {filtered.length}
+          </span>
+        </div>
+
         {loading || loadingCats ? (
           <LoadingSpinner text={t('series.loading')} />
         ) : !selectedSeriesCategory ? (
@@ -80,17 +115,16 @@ export default function SeriesPage() {
             {t('series.noResults')}
           </div>
         ) : (
-          <div className={`grid gap-4 ${
+          <div className={`grid gap-3 stagger-children ${
             isTV ? 'grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' : 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5'
           }`}>
             {filtered.map((s) => (
               <MediaCard
                 key={s.series_id}
-                title={s.name}
+                name={s.name}
                 image={s.cover}
-                subtitle={[s.genre, s.release_date].filter(Boolean).join(' • ')}
                 rating={s.rating}
-                onClick={() => setSelectedSeries(s)}
+                onClick={() => { playClick(); setSelectedSeries(s); }}
               />
             ))}
           </div>

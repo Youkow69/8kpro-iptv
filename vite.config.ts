@@ -10,7 +10,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api/proxy': {
-        target: 'https://iptv-smarters-vert.vercel.app',
+        target: 'https://8kproultimate.vercel.app',
         changeOrigin: true,
         secure: true,
       },

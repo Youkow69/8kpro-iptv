@@ -42,6 +42,11 @@ interface IptvState {
   // Last channel
   lastChannelId: number | null;
   setLastChannel: (id: number) => void;
+
+  // Search history
+  searchHistory: string[];
+  addSearchHistory: (query: string) => void;
+  clearSearchHistory: () => void;
 }
 
 function loadFavorites(): number[] {
@@ -99,5 +104,22 @@ export const useIptvStore = create<IptvState>((set, get) => ({
   setLastChannel: (id) => {
     localStorage.setItem('iptv_last_channel', String(id));
     set({ lastChannelId: id });
+  },
+
+  // Search history
+  searchHistory: (() => {
+    try { return JSON.parse(localStorage.getItem('iptv_search_history') || '[]') as string[]; }
+    catch { return []; }
+  })(),
+  addSearchHistory: (query: string) => {
+    const trimmed = query.trim();
+    if (!trimmed || trimmed.length < 2) return;
+    const history = [trimmed, ...get().searchHistory.filter((h) => h !== trimmed)].slice(0, 15);
+    localStorage.setItem('iptv_search_history', JSON.stringify(history));
+    set({ searchHistory: history });
+  },
+  clearSearchHistory: () => {
+    localStorage.removeItem('iptv_search_history');
+    set({ searchHistory: [] });
   },
 }));

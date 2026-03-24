@@ -197,17 +197,19 @@ export default function ChannelLogo({ name, size = 'md', className = '' }: Chann
 
   return (
     <div
-      className={`${sizeClasses[size]} flex items-center justify-center shrink-0 shadow-lg ${className}`}
+      className={`${sizeClasses[size]} flex items-center justify-center shrink-0 relative overflow-hidden ${className}`}
       style={{
         background: gradient,
-        boxShadow: '0 2px 8px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1)',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.15)',
       }}
     >
+      {/* Shine effect */}
+      <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-black/10 pointer-events-none" />
       <span
-        className={`${fontSize} font-black tracking-tight leading-none select-none`}
+        className={`${fontSize} font-black tracking-tight leading-none select-none relative`}
         style={{
           color: textColor,
-          textShadow: '0 1px 2px rgba(0,0,0,0.3)',
+          textShadow: '0 1px 2px rgba(0,0,0,0.4)',
           letterSpacing: abbr.length > 3 ? '-0.05em' : '0',
         }}
       >

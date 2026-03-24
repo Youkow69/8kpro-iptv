@@ -21,13 +21,14 @@ export const translations: Record<LangCode, Record<string, string>> = {
   // ──────────────────────────────────────────────
   fr: {
     // Nav
+    'nav.dashboard': 'Accueil',
     'nav.live': 'Direct',
     'nav.movies': 'Films',
     'nav.series': 'Séries',
     'nav.settings': 'Paramètres',
 
     // Login
-    'login.title': '8K Pro',
+    'login.title': '8K Player',
     'login.subtitle': 'Connectez-vous à votre service IPTV',
     'login.server': 'URL du serveur',
     'login.username': "Nom d'utilisateur",
@@ -127,13 +128,14 @@ export const translations: Record<LangCode, Record<string, string>> = {
   // ──────────────────────────────────────────────
   en: {
     // Nav
+    'nav.dashboard': 'Home',
     'nav.live': 'Live',
     'nav.movies': 'Movies',
     'nav.series': 'Series',
     'nav.settings': 'Settings',
 
     // Login
-    'login.title': '8K Pro',
+    'login.title': '8K Player',
     'login.subtitle': 'Sign in to your IPTV service',
     'login.server': 'Server URL',
     'login.username': 'Username',
@@ -233,13 +235,14 @@ export const translations: Record<LangCode, Record<string, string>> = {
   // ──────────────────────────────────────────────
   es: {
     // Nav
+    'nav.dashboard': 'Inicio',
     'nav.live': 'En vivo',
     'nav.movies': 'Películas',
     'nav.series': 'Series',
     'nav.settings': 'Ajustes',
 
     // Login
-    'login.title': '8K Pro',
+    'login.title': '8K Player',
     'login.subtitle': 'Inicia sesión en tu servicio IPTV',
     'login.server': 'URL del servidor',
     'login.username': 'Nombre de usuario',
@@ -339,13 +342,14 @@ export const translations: Record<LangCode, Record<string, string>> = {
   // ──────────────────────────────────────────────
   pt: {
     // Nav
+    'nav.dashboard': 'Inicio',
     'nav.live': 'Ao vivo',
     'nav.movies': 'Filmes',
     'nav.series': 'Séries',
     'nav.settings': 'Definições',
 
     // Login
-    'login.title': '8K Pro',
+    'login.title': '8K Player',
     'login.subtitle': 'Inicie sessão no seu serviço IPTV',
     'login.server': 'URL do servidor',
     'login.username': 'Nome de utilizador',
@@ -445,13 +449,14 @@ export const translations: Record<LangCode, Record<string, string>> = {
   // ──────────────────────────────────────────────
   de: {
     // Nav
+    'nav.dashboard': 'Startseite',
     'nav.live': 'Live',
     'nav.movies': 'Filme',
     'nav.series': 'Serien',
     'nav.settings': 'Einstellungen',
 
     // Login
-    'login.title': '8K Pro',
+    'login.title': '8K Player',
     'login.subtitle': 'Melden Sie sich bei Ihrem IPTV-Dienst an',
     'login.server': 'Server-URL',
     'login.username': 'Benutzername',
@@ -551,13 +556,14 @@ export const translations: Record<LangCode, Record<string, string>> = {
   // ──────────────────────────────────────────────
   it: {
     // Nav
+    'nav.dashboard': 'Home',
     'nav.live': 'Diretta',
     'nav.movies': 'Film',
     'nav.series': 'Serie',
     'nav.settings': 'Impostazioni',
 
     // Login
-    'login.title': '8K Pro',
+    'login.title': '8K Player',
     'login.subtitle': 'Accedi al tuo servizio IPTV',
     'login.server': 'URL del server',
     'login.username': 'Nome utente',
@@ -657,13 +663,14 @@ export const translations: Record<LangCode, Record<string, string>> = {
   // ──────────────────────────────────────────────
   ar: {
     // Nav
+    'nav.dashboard': 'الرئيسية',
     'nav.live': 'مباشر',
     'nav.movies': 'أفلام',
     'nav.series': 'مسلسلات',
     'nav.settings': 'الإعدادات',
 
     // Login
-    'login.title': '8K Pro',
+    'login.title': '8K Player',
     'login.subtitle': 'سجّل الدخول إلى خدمة IPTV الخاصة بك',
     'login.server': 'عنوان URL للخادم',
     'login.username': 'اسم المستخدم',
@@ -763,13 +770,14 @@ export const translations: Record<LangCode, Record<string, string>> = {
   // ──────────────────────────────────────────────
   tr: {
     // Nav
+    'nav.dashboard': 'Ana Sayfa',
     'nav.live': 'Canlı',
     'nav.movies': 'Filmler',
     'nav.series': 'Diziler',
     'nav.settings': 'Ayarlar',
 
     // Login
-    'login.title': '8K Pro',
+    'login.title': '8K Player',
     'login.subtitle': 'IPTV hizmetinize giriş yapın',
     'login.server': 'Sunucu URL\'si',
     'login.username': 'Kullanıcı adı',
@@ -875,7 +883,7 @@ export const translations: Record<LangCode, Record<string, string>> = {
     'nav.settings': 'Instellingen',
 
     // Login
-    'login.title': '8K Pro',
+    'login.title': '8K Player',
     'login.subtitle': 'Meld u aan bij uw IPTV-dienst',
     'login.server': 'Server-URL',
     'login.username': 'Gebruikersnaam',
@@ -975,13 +983,14 @@ export const translations: Record<LangCode, Record<string, string>> = {
   // ──────────────────────────────────────────────
   ru: {
     // Nav
+    'nav.dashboard': 'Главная',
     'nav.live': 'Прямой эфир',
     'nav.movies': 'Фильмы',
     'nav.series': 'Сериалы',
     'nav.settings': 'Настройки',
 
     // Login
-    'login.title': '8K Pro',
+    'login.title': '8K Player',
     'login.subtitle': 'Войдите в ваш IPTV-сервис',
     'login.server': 'URL сервера',
     'login.username': 'Имя пользователя',

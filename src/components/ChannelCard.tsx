@@ -1,84 +1,77 @@
-import { useRef, useCallback } from 'react';
-import { Star } from 'lucide-react';
-import type { LiveStream } from '../types/xtream';
-import { useIptvStore } from '../store/iptvStore';
-import { useTranslation } from '../i18n/useTranslation';
-import { useIsTV } from '../hooks/useIsTV';
+import { useRef } from 'react';
+import { Star, Radio } from 'lucide-react';
 import ChannelLogo from './ChannelLogo';
+import { useIptvStore } from '../store/iptvStore';
+import { useIsTV } from '../hooks/useIsTV';
+import { playClick, playFavoriteAdd, playFavoriteRemove } from '../services/sounds';
 
 interface Props {
-  stream: LiveStream;
+  stream: { stream_id: number; name: string; stream_icon?: string; epg_channel_id?: string };
   onClick: () => void;
   isLast?: boolean;
+  index?: number;
 }
 
-export default function ChannelCard({ stream, onClick, isLast }: Props) {
+export default function ChannelCard({ stream, onClick, isLast, index }: Props) {
   const { favorites, toggleFavorite } = useIptvStore();
-  const { t } = useTranslation();
-  const isTV = useIsTV();
   const isFav = favorites.includes(stream.stream_id);
-  const rowRef = useRef<HTMLDivElement>(null);
-
-  // Auto-scroll into view when focused (D-pad / keyboard navigation)
-  const handleFocus = useCallback(() => {
-    if (rowRef.current) {
-      rowRef.current.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-    }
-  }, []);
-
-  // Pressing Enter/OK plays the channel
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      onClick();
-    }
-  }, [onClick]);
+  const isTV = useIsTV();
+  const ref = useRef<HTMLButtonElement>(null);
 
   return (
-    <div
-      ref={rowRef}
+    <button
+      ref={ref}
+      onClick={() => { playClick(); onClick(); }}
       tabIndex={0}
-      onFocus={handleFocus}
-      onKeyDown={handleKeyDown}
-      onClick={onClick}
-      className={`flex items-center gap-3 hover:bg-surface-light focus:bg-accent/10 focus:outline-none transition group cursor-pointer ${
-        isTV ? 'px-5 py-4' : 'px-4 py-3'
+      className={`w-full flex items-center text-left transition-all group relative overflow-hidden ${
+        isTV ? 'gap-4 px-5 py-4' : 'gap-3 px-4 py-3'
+      } ${
+        isLast
+          ? 'bg-gradient-to-r from-accent/10 to-transparent border-l-3 border-accent'
+          : 'hover:bg-surface-light/80 focus-visible:bg-surface-light/80'
       }`}
+      onFocus={(e) => {
+        if (isTV) e.currentTarget.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      }}
     >
-      <ChannelLogo name={stream.name} size={isTV ? 'lg' : 'md'} />
+      <span className={`text-text-secondary/30 font-mono shrink-0 ${isTV ? 'text-xs w-8' : 'text-[10px] w-6'}`}>
+        {index !== undefined ? index + 1 : ''}
+      </span>
+
+      <div className={`rounded-lg bg-surface-lighter flex items-center justify-center shrink-0 overflow-hidden ${isTV ? 'w-12 h-12' : 'w-9 h-9'}`}>
+        {stream.stream_icon ? (
+          <img src={stream.stream_icon} alt="" className="w-full h-full object-contain" loading="lazy" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+        ) : (
+          <ChannelLogo name={stream.name} size={isTV ? 'md' : 'sm'} />
+        )}
+      </div>
+
       <div className="flex-1 min-w-0">
-        <p className={`text-text-primary font-medium truncate group-hover:text-accent group-focus:text-accent transition ${
-          isTV ? 'text-lg' : 'text-sm'
-        }`}>
+        <p className={`text-text-primary font-medium truncate ${isTV ? 'text-base' : 'text-sm'}`}>
           {stream.name}
         </p>
-      </div>
-      <div className="flex items-center gap-2 shrink-0">
         {isLast && (
-          <span className={`bg-accent/20 text-accent px-2 py-0.5 rounded-full ${
-            isTV ? 'text-sm' : 'text-[10px]'
-          }`}>
-            {t('live.last')}
-          </span>
+          <div className="flex items-center gap-1 mt-0.5">
+            <Radio className="w-3 h-3 text-accent" />
+            <span className="text-accent text-[10px] font-medium">Derniere chaîne</span>
+          </div>
         )}
-        <button
-          tabIndex={-1}
-          onClick={(e) => {
-            e.stopPropagation();
-            toggleFavorite(stream.stream_id);
-          }}
-          className={`rounded-lg transition ${
-            isTV ? 'p-3' : 'p-1.5'
-          } ${
-            isFav
-              ? 'text-yellow-400'
-              : 'text-text-secondary/30 hover:text-yellow-400 opacity-0 group-hover:opacity-100 group-focus:opacity-100'
-          }`}
-          title={isFav ? t('removeFavorite') : t('addFavorite')}
-        >
-          <Star className={`${isTV ? 'w-6 h-6' : 'w-4 h-4'} ${isFav ? 'fill-yellow-400' : ''}`} />
-        </button>
       </div>
-    </div>
+
+      <button
+        onClick={(e) => { e.stopPropagation(); isFav ? playFavoriteRemove() : playFavoriteAdd(); toggleFavorite(stream.stream_id); }}
+        className={`rounded-lg transition-all shrink-0 ${
+          isTV ? 'p-2.5' : 'p-1.5'
+        } ${
+          isFav
+            ? 'text-yellow-400 scale-110'
+            : 'text-white/15 hover:text-yellow-400 focus-visible:text-yellow-400 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100'
+        }`}
+      >
+        <Star className={`${isTV ? 'w-5 h-5' : 'w-4 h-4'} ${isFav ? 'fill-yellow-400' : ''}`} />
+      </button>
+
+      <div className="absolute inset-y-0 right-0 w-20 bg-gradient-to-l from-accent/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+    </button>
   );
 }

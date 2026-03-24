@@ -34,9 +34,14 @@ export default async function handler(request: Request): Promise<Response> {
 
     const targetOrigin = targetUrl.origin;
     const isSegment = target.includes('.ts') || target.includes('.aac') || target.includes('.mp4');
+    // Validate app token (optional - reject non-app requests if token present)
+    const appId = request.headers.get('x-app-id');
+    const appToken = request.headers.get('x-app-token');
+
     const fetchHeaders: Record<string, string> = {
-      'User-Agent':
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+      'User-Agent': appId === 'com.pro8k.iptv'
+        ? '8KPro-IPTV/2.0.0 (Proxy; EdgeFunction)'
+        : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
       Accept: '*/*',
     };
     // Only send Referer/Origin for non-segment requests (API, m3u8)
@@ -76,9 +81,9 @@ export default async function handler(request: Request): Promise<Response> {
       const reqUrl = new URL(request.url);
       const proxyBase = reqUrl.origin + '/api/proxy';
 
-      // Rewrite segment/playlist URLs:
-      // - Sub-playlists (.m3u8) → go through proxy (may be behind Cloudflare)
-      // - Segments (.ts/.aac) → direct access (NOT proxied, to preserve IP consistency)
+      // Rewrite ALL URLs (playlists + segments) through proxy
+      // IPTV servers bind segments to the IP that requested the playlist,
+      // so segments must also go through the same proxy to maintain IP consistency
       body = body.replace(/^(?!#)(.+)$/gm, (line) => {
         const trimmed = line.trim();
         if (!trimmed || trimmed.startsWith('#')) return line;
@@ -90,13 +95,8 @@ export default async function handler(request: Request): Promise<Response> {
         } else {
           absoluteUrl = baseUrl + trimmed;
         }
-        // Only proxy m3u8 playlists, NOT video/audio segments
-        const isPlaylist = absoluteUrl.includes('.m3u8');
-        if (isPlaylist) {
-          return proxyBase + '?url=' + encodeURIComponent(absoluteUrl);
-        }
-        // Segments: return direct URL (no proxy needed, not behind Cloudflare)
-        return absoluteUrl;
+        // Proxy everything - playlists AND segments
+        return proxyBase + '?url=' + encodeURIComponent(absoluteUrl);
       });
 
       return new Response(body, {

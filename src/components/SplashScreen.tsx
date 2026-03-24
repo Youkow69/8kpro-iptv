@@ -16,12 +16,12 @@ export default function SplashScreen({ onFinish }: { onFinish: () => void }) {
 
   useEffect(() => {
     const t = [
-      setTimeout(() => setPhase(1), 100),
-      setTimeout(() => setPhase(2), 2200),
-      setTimeout(() => setPhase(3), 3200),
-      setTimeout(() => setPhase(4), 3800),
-      setTimeout(() => setPhase(5), 5000),
-      setTimeout(() => onFinishRef.current(), 5800),
+      setTimeout(() => setPhase(1), 80),
+      setTimeout(() => setPhase(2), 1200),
+      setTimeout(() => setPhase(3), 1800),
+      setTimeout(() => setPhase(4), 2200),
+      setTimeout(() => setPhase(5), 2600),
+      setTimeout(() => onFinishRef.current(), 3000),
     ];
     return () => t.forEach(clearTimeout);
   }, []);
@@ -551,13 +551,10 @@ export default function SplashScreen({ onFinish }: { onFinish: () => void }) {
       return true;
     });
 
-    // --- LOGO 8K ---
+    // --- LOGO 8K --- (rendered via HTML overlay, only flash effect in canvas)
     if (phase >= 3) {
       const lT = Math.min((t - 3.2) / 0.5, 1);
-      const lS = lT * (1 + (1 - lT) * 0.3);
-      const lA = lT * gA;
-
-      // Impact flash
+      // Impact flash only
       if (lT > 0 && lT < 0.5) {
         const fR = lT * 2 * 130;
         const fG = ctx.createRadialGradient(cx, cy, 0, cx, cy, fR);
@@ -566,34 +563,6 @@ export default function SplashScreen({ onFinish }: { onFinish: () => void }) {
         ctx.fillStyle = fG;
         ctx.beginPath(); ctx.arc(cx, cy, fR, 0, Math.PI * 2); ctx.fill();
       }
-
-      ctx.save();
-      ctx.translate(cx, cy);
-      ctx.scale(lS, lS);
-      ctx.globalAlpha = lA;
-
-      const sz = 56, rd = 14;
-      ctx.shadowColor = 'rgba(212,160,23,0.6)';
-      ctx.shadowBlur = 35;
-
-      const bg = ctx.createLinearGradient(-sz, -sz, sz, sz);
-      bg.addColorStop(0, '#eab308');
-      bg.addColorStop(0.5, '#d4a017');
-      bg.addColorStop(1, '#b45309');
-
-      ctx.beginPath();
-      ctx.roundRect(-sz, -sz, sz * 2, sz * 2, rd);
-      ctx.fillStyle = bg;
-      ctx.fill();
-      ctx.shadowBlur = 0;
-
-      ctx.fillStyle = '#000';
-      ctx.font = '900 64px Arial, Helvetica, sans-serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText('8K', 0, 4);
-
-      ctx.restore();
     }
 
     // --- TEXT ---
@@ -604,22 +573,7 @@ export default function SplashScreen({ onFinish }: { onFinish: () => void }) {
       ctx.globalAlpha = ease * gA;
       ctx.translate(cx, cy + 85 + (1 - ease) * 20);
 
-      ctx.fillStyle = '#f0f0f0';
-      ctx.font = '700 36px Arial, Helvetica, sans-serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText('8K', -28, 0);
-      ctx.fillStyle = '#d4a017';
-      ctx.fillText('Pro', 22, 0);
-
-      ctx.fillStyle = 'rgba(136,136,160,0.8)';
-      ctx.font = '400 11px Arial, Helvetica, sans-serif';
-      ctx.fillText('P R E M I U M   I P T V', 0, 30);
-
-      ctx.strokeStyle = 'rgba(212,160,23,0.3)';
-      ctx.lineWidth = 1;
-      ctx.beginPath(); ctx.moveTo(-95, 30); ctx.lineTo(-55, 30); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(55, 30); ctx.lineTo(95, 30); ctx.stroke();
+      // Text drawn via HTML overlay to prevent RTL flip on Android WebView
 
       const bW = 160, bY = 52;
       const bP = Math.min((t - 4) / 1, 1);
@@ -669,8 +623,36 @@ export default function SplashScreen({ onFinish }: { onFinish: () => void }) {
   }, [draw]);
 
   return (
-    <div className={`fixed inset-0 z-[200] bg-bg transition-opacity duration-700 ${phase === 5 ? 'opacity-0' : 'opacity-100'}`}>
+    <div className={`fixed inset-0 z-[200] bg-bg transition-opacity duration-700 ${phase === 5 ? 'opacity-0' : 'opacity-100'}`} dir="ltr">
       <canvas ref={canvasRef} className="absolute inset-0" style={{ width: '100%', height: '100%' }} />
+      {/* HTML overlay for text (canvas text gets flipped on some Android WebViews) */}
+      {phase >= 3 && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none" style={{ direction: 'ltr' }}>
+          <div
+            className="flex items-center justify-center rounded-2xl"
+            style={{
+              width: 112,
+              height: 112,
+              background: 'linear-gradient(135deg, #eab308, #d4a017, #b45309)',
+              boxShadow: '0 0 35px rgba(212,160,23,0.6)',
+              opacity: phase >= 3 ? 1 : 0,
+              transform: `scale(${phase >= 3 ? 1 : 0.5})`,
+              transition: 'all 0.5s cubic-bezier(0.16, 1, 0.3, 1)',
+            }}
+          >
+            <span style={{ fontSize: 64, fontWeight: 900, color: '#000', fontFamily: 'Arial, Helvetica, sans-serif', letterSpacing: -2, direction: 'ltr', unicodeBidi: 'bidi-override' }}>8K</span>
+          </div>
+          {phase >= 4 && (
+            <div className="mt-6 text-center" style={{ opacity: phase >= 4 ? 1 : 0, transform: `translateY(${phase >= 4 ? 0 : 20}px)`, transition: 'all 0.6s cubic-bezier(0.16, 1, 0.3, 1)' }}>
+              <p style={{ fontSize: 36, fontWeight: 700, fontFamily: 'Arial, Helvetica, sans-serif', direction: 'ltr', unicodeBidi: 'bidi-override' }}>
+                <span style={{ color: '#f0f0f0' }}>8K</span>
+                <span style={{ color: '#d4a017' }}>Player</span>
+              </p>
+              <p style={{ fontSize: 11, color: 'rgba(136,136,160,0.8)', letterSpacing: 8, marginTop: 8, fontFamily: 'Arial, sans-serif' }}>PREMIUM IPTV</p>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

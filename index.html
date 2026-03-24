@@ -1,10 +1,46 @@
 <!doctype html>
-<html lang="en">
+<html lang="fr">
   <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+    <meta name="theme-color" content="#0a0a0a" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="description" content="8K Pro Ultimate - L'application IPTV premium. +25 000 chaînes, films et séries en qualité 4K/8K sur tous vos appareils." />
+    <meta name="keywords" content="IPTV, 8K, 4K, streaming, TV, films, séries, chaînes, live" />
+    <meta name="author" content="8K Pro" />
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="8K Pro Ultimate - IPTV Premium" />
+    <meta property="og:description" content="+25 000 chaînes TV, films et séries en qualité 8K. Essai gratuit 24h." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://8kproultimate.vercel.app" />
+
+    <!-- Mobile App -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="8K Pro" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="format-detection" content="telephone=no" />
+
+    <!-- Icons & PWA -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>8K Pro</title>
+    <link rel="apple-touch-icon" href="/favicon.svg" />
+    <link rel="manifest" href="/manifest.json" />
+
+    <!-- Preconnect -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="dns-prefetch" href="https://8kproultimate.vercel.app" />
+
+    <title>8K Player</title>
+
+    <style>
+      /* Prevent flash of unstyled content */
+      html, body { background: #0a0a0a; margin: 0; }
+      #root { min-height: 100vh; min-height: 100dvh; }
+      /* Smooth loading */
+      body { opacity: 0; animation: bodyFadeIn 0.3s 0.1s ease forwards; }
+      @keyframes bodyFadeIn { to { opacity: 1; } }
+    </style>
   </head>
   <body>
     <div id="root"></div>

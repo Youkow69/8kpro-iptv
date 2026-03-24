@@ -1,8 +1,9 @@
 import { useRef, useCallback } from 'react';
-import { Search, Loader2 } from 'lucide-react';
+import { Search, Loader2, Layers } from 'lucide-react';
 import type { Category } from '../types/xtream';
 import { useIsTV } from '../hooks/useIsTV';
 import ChannelLogo from './ChannelLogo';
+import { playNav } from '../services/sounds';
 
 interface Props {
   categories: Category[];
@@ -18,13 +19,23 @@ export default function CategoryList({ categories, selected, onSelect, search, o
   const isTV = useIsTV();
 
   return (
-    <div className={`shrink-0 bg-surface rounded-xl flex flex-col ${
+    <div className={`shrink-0 glass rounded-xl flex flex-col ${
       isTV
         ? 'w-full md:w-72 p-4 max-h-[calc(100vh-100px)] md:max-h-[calc(100vh-32px)]'
         : 'w-full md:w-64 p-3 max-h-[calc(100vh-100px)] md:max-h-[calc(100vh-32px)]'
     }`}>
+      {/* Header */}
+      <div className="flex items-center gap-2 mb-3">
+        <Layers className="w-4 h-4 text-accent" />
+        <span className="text-xs font-semibold text-text-primary uppercase tracking-wider">Categories</span>
+        <span className="ml-auto text-[10px] text-text-secondary bg-surface-lighter px-2 py-0.5 rounded-full">
+          {categories.length}
+        </span>
+      </div>
+
+      {/* Search */}
       <div className="relative mb-3">
-        <Search className={`absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary ${
+        <Search className={`absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary/50 ${
           isTV ? 'w-5 h-5' : 'w-4 h-4'
         }`} />
         <input
@@ -32,28 +43,28 @@ export default function CategoryList({ categories, selected, onSelect, search, o
           placeholder={searchPlaceholder ?? 'Rechercher...'}
           value={search}
           onChange={(e) => onSearch(e.target.value)}
-          className={`w-full bg-surface-light border border-surface-lighter rounded-lg pr-3 text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:border-accent transition ${
-            isTV ? 'pl-10 py-3 text-base' : 'pl-9 py-2 text-sm'
+          className={`w-full bg-surface-light/50 border border-surface-lighter/50 rounded-xl pr-3 text-text-primary placeholder:text-text-secondary/40 focus:outline-none focus:border-accent/50 focus:bg-surface-light transition ${
+            isTV ? 'pl-10 py-3 text-base' : 'pl-9 py-2.5 text-sm'
           }`}
         />
       </div>
+
+      {/* Category list */}
       <div className={`overflow-y-auto flex-1 ${isTV ? 'space-y-1' : 'space-y-0.5'}`}>
         {loading ? (
           <div className="flex items-center justify-center py-6">
             <Loader2 className="w-5 h-5 text-accent animate-spin" />
           </div>
         ) : (
-          <>
-            {categories.map((cat) => (
-              <CategoryButton
-                key={cat.category_id}
-                cat={cat}
-                isSelected={selected === cat.category_id}
-                onSelect={onSelect}
-                isTV={isTV}
-              />
-            ))}
-          </>
+          categories.map((cat) => (
+            <CategoryButton
+              key={cat.category_id}
+              cat={cat}
+              isSelected={selected === cat.category_id}
+              onSelect={onSelect}
+              isTV={isTV}
+            />
+          ))
         )}
       </div>
     </div>
@@ -78,19 +89,20 @@ function CategoryButton({ cat, isSelected, onSelect, isTV }: {
     <button
       ref={btnRef}
       onFocus={handleFocus}
-      onClick={() => onSelect(cat.category_id)}
-      className={`w-full text-left rounded-lg transition flex items-center ${
+      onClick={() => { playNav(); onSelect(cat.category_id); }}
+      className={`w-full text-left rounded-xl transition-all flex items-center ${
         isTV
-          ? 'text-base px-4 py-3 gap-3 focus:bg-accent/15 focus:text-accent focus:outline-none focus-visible:outline-2 focus-visible:outline-accent'
-          : 'text-sm px-3 py-2 gap-2.5'
+          ? 'text-base px-4 py-3 gap-3'
+          : 'text-sm px-3 py-2.5 gap-2.5'
       } ${
         isSelected
-          ? 'bg-accent/15 text-accent font-medium'
-          : 'text-text-secondary hover:bg-surface-light hover:text-text-primary'
+          ? 'bg-gradient-to-r from-accent/20 to-accent/5 text-accent font-medium border-l-3 border-accent shadow-sm shadow-accent/10'
+          : 'text-text-secondary hover:bg-surface-light/50 hover:text-text-primary'
       }`}
     >
       <ChannelLogo name={cat.category_name} size="sm" />
-      <span className="truncate">{cat.category_name}</span>
+      <span className="truncate flex-1">{cat.category_name}</span>
+      {isSelected && <span className="w-1.5 h-1.5 bg-accent rounded-full shrink-0" />}
     </button>
   );
 }
