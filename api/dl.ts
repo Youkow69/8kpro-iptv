@@ -8,7 +8,7 @@ export default async function handler(): Promise<Response> {
   return new Response(null, {
     status: 302,
     headers: {
-      'Location': 'https://github.com/Youkow69/8kpro-iptv/releases/download/v1.0.5/8kpro.apk',
+      'Location': 'https://github.com/Youkow69/8kpro-iptv/releases/download/v2.0.0/8kpro.apk',
       'Cache-Control': 'no-cache',
     },
   });

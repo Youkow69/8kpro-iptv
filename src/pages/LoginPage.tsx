@@ -64,13 +64,26 @@ export default function LoginPage() {
   const handleActivate = async () => {
     setError('');
     setActivating(true);
-    const macClean = deviceId.mac.replace(/:/g, '').toLowerCase();
+    const macAddr = deviceId.mac.toUpperCase();
     try {
-      const res = await fetch(`/api/activate?mac=${macClean}`);
+      const baseUrl = (window as any)?.Capacitor?.isNativePlatform?.()
+        ? 'https://8kproultimate.vercel.app'
+        : '';
+      const res = await fetch(`${baseUrl}/api/activate?mac=${encodeURIComponent(macAddr)}`);
       const data = await res.json();
       if (data.activated) {
         const creds = { server: data.server, username: data.username, password: data.password };
-        const authRes = await authenticate(creds);
+        // Try direct auth first (native), fallback to proxy (web)
+        let authRes;
+        try {
+          const directUrl = `${data.server}/player_api.php?username=${data.username}&password=${data.password}`;
+          const authResp = await fetch(directUrl);
+          authRes = await authResp.json();
+        } catch {
+          // Fallback to proxy-based auth
+          authRes = await authenticate(creds);
+        }
+        if (!authRes?.user_info?.auth) throw new Error('Auth failed');
         login(creds, authRes.user_info, authRes.server_info);
         playWelcome();
         navigate('/live');

@@ -49,12 +49,15 @@ function proxyUrl(creds: XtreamCredentials, params?: Record<string, string>) {
   return `${PROXY}?${sp.toString()}`;
 }
 
-// Axios instance with secure headers
+// Axios instance - only add secure headers for proxy requests (web)
+// Native requests go directly to IPTV server which rejects custom headers
 const secureAxios = axios.create();
 secureAxios.interceptors.request.use((config) => {
-  const headers = getSecureHeaders();
-  for (const [key, value] of Object.entries(headers)) {
-    config.headers.set(key, value);
+  if (!isNative()) {
+    const headers = getSecureHeaders();
+    for (const [key, value] of Object.entries(headers)) {
+      config.headers.set(key, value);
+    }
   }
   return config;
 });
@@ -127,10 +130,12 @@ export function getOriginalUrlFromProxy(proxyUrl: string): string | null {
 
 export function buildLiveStreamUrl(creds: XtreamCredentials, streamId: number): string {
   const server = creds.server.replace(/\/+$/, '');
+  // Native app: use .ts direct (no CORS, no timeout)
+  if (isNative()) {
+    return `${server}/live/${creds.username}/${creds.password}/${streamId}.ts`;
+  }
+  // Web: use .ts through proxy (limited by proxy timeout but works for short sessions)
   const raw = `${server}/live/${creds.username}/${creds.password}/${streamId}.ts`;
-  // Native app: connect DIRECTLY to IPTV server (no CORS in WebView, no proxy timeout)
-  // Web: use proxy (needed for CORS)
-  if (isNative()) return raw;
   return proxyStreamUrl(raw);
 }
 
