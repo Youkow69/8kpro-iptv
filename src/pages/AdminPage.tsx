@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { usePullToRefresh } from '../hooks/usePullToRefresh';
 import {
   Shield, BarChart3, Settings, LogOut, Clock,
   CheckCircle, XCircle, AlertCircle, Trash2, Download,
   Upload, Server, Link, MessageSquare, Lock,
   Activity, Zap, TrendingUp, UserPlus, Search, Filter,
-  Monitor, Plus, Wifi,
+  Monitor, Plus, Wifi, Fingerprint, Copy,
 } from 'lucide-react';
 import { useAdminStore, setAdminPassword, type TrialRequest, type MacDevice } from '../store/adminStore';
 import { Logo } from '../components/Sidebar';
@@ -426,19 +427,34 @@ function TrialCard({ trial, onStatusChange, onDelete }: {
   );
 }
 
+// Get or generate device MAC (same logic as LoginPage)
+function getThisDeviceMac(): string {
+  const DEVICE_KEY = '8k_device_id';
+  try {
+    const saved = localStorage.getItem(DEVICE_KEY);
+    if (saved) return JSON.parse(saved).mac || '';
+  } catch {}
+  // Generate if not exists
+  const hex = () => Math.floor(Math.random() * 256).toString(16).padStart(2, '0').toUpperCase();
+  const mac = `00:1A:${hex()}:${hex()}:${hex()}:${hex()}`;
+  const key = Array.from({ length: 12 }, () => '0123456789ABCDEF'[Math.floor(Math.random() * 16)]).join('');
+  localStorage.setItem(DEVICE_KEY, JSON.stringify({ mac, key }));
+  return mac;
+}
+
 // --- MAC Tab ---
 function MacTab() {
   const { macDevices, addMacDevice, updateMacDevice, deleteMacDevice } = useAdminStore();
   const [showAddForm, setShowAddForm] = useState(false);
-  const [newMac, setNewMac] = useState({ mac: '', label: '', username: '', m3uUrl: '', notes: '', status: 'active' as MacDevice['status'] });
+  const thisDeviceMac = getThisDeviceMac();
+  const [newMac, setNewMac] = useState({ mac: thisDeviceMac, label: '', username: '', m3uUrl: '', notes: '', status: 'active' as MacDevice['status'] });
   const [search, setSearch] = useState('');
   const [syncing, setSyncing] = useState(false);
   const [syncError, setSyncError] = useState('');
   const [, setLoadingRemote] = useState(true);
 
-  // Load devices from Supabase on mount (sync across devices)
-  useEffect(() => {
-    (async () => {
+  // Load devices from Supabase
+  const loadFromSupabase = useCallback(async () => {
       try {
         const res = await fetch('/api/activate?list=all&adminKey=8kpro2026');
         if (!res.ok) throw new Error('Failed to load');
@@ -470,8 +486,13 @@ function MacTab() {
       } finally {
         setLoadingRemote(false);
       }
-    })();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);  // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Load on mount
+  useEffect(() => { loadFromSupabase(); }, [loadFromSupabase]);
+
+  // Pull to refresh
+  const refreshing = usePullToRefresh(loadFromSupabase);
 
   const filtered = macDevices.filter((d) =>
     d.mac.toLowerCase().includes(search.toLowerCase()) ||
@@ -555,6 +576,11 @@ function MacTab() {
 
   return (
     <div className="page-enter">
+      {refreshing && (
+        <div className="flex justify-center py-3 mb-2 animate-fade-in">
+          <div className="w-6 h-6 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+        </div>
+      )}
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-text-primary">Gestion MAC</h1>
@@ -567,6 +593,32 @@ function MacTab() {
           <Plus className="w-4 h-4" /> Ajouter MAC
         </button>
       </div>
+
+      {/* This device MAC - auto-fill */}
+      {thisDeviceMac && (
+        <div className="glass rounded-2xl p-4 mb-4 flex items-center justify-between animate-fade-in">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-accent/15 flex items-center justify-center">
+              <Fingerprint className="w-5 h-5 text-accent" />
+            </div>
+            <div>
+              <p className="text-xs text-text-secondary">MAC de cet appareil</p>
+              <p className="text-sm font-mono font-bold text-text-primary">{thisDeviceMac}</p>
+            </div>
+          </div>
+          <button
+            onClick={() => {
+              navigator.clipboard.writeText(thisDeviceMac);
+              setNewMac((prev) => ({ ...prev, mac: thisDeviceMac }));
+              setShowAddForm(true);
+              playClick();
+            }}
+            className="flex items-center gap-1.5 bg-accent/15 text-accent px-3 py-2 rounded-xl text-xs font-medium hover:bg-accent/25 transition"
+          >
+            <Copy className="w-3.5 h-3.5" /> Ajouter ce MAC
+          </button>
+        </div>
+      )}
 
       {/* Add form */}
       {showAddForm && (

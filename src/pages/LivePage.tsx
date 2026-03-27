@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useAuthStore } from '../store/authStore';
 import { useIptvStore } from '../store/iptvStore';
 import { getLiveCategories, getLiveStreams, buildLiveStreamUrl } from '../services/xtreamApi';
@@ -8,6 +8,7 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import { Star, LayoutGrid, List } from 'lucide-react';
 import { useTranslation } from '../i18n/useTranslation';
 import { useIsTV } from '../hooks/useIsTV';
+import { usePullToRefresh } from '../hooks/usePullToRefresh';
 import { playClick } from '../services/sounds';
 import ChannelLogo from '../components/ChannelLogo';
 
@@ -28,6 +29,19 @@ export default function LivePage() {
   const [search, setSearch] = useState('');
   const [showFavsOnly, setShowFavsOnly] = useState(false);
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
+
+  // Pull to refresh - reload categories and streams
+  const handleRefresh = useCallback(async () => {
+    try {
+      const cats = await getLiveCategories(credentials);
+      setLiveCategories(cats);
+      if (selectedLiveCategory) {
+        const streams = await getLiveStreams(credentials, selectedLiveCategory);
+        setLiveStreams(streams);
+      }
+    } catch {}
+  }, [credentials, selectedLiveCategory]);
+  const refreshing = usePullToRefresh(handleRefresh);
 
   useEffect(() => {
     if (liveCategories.length === 0) {
@@ -67,6 +81,11 @@ export default function LivePage() {
 
   return (
     <div className="flex flex-col md:flex-row gap-4 p-4 flex-1 page-enter">
+      {refreshing && (
+        <div className="absolute top-2 left-1/2 -translate-x-1/2 z-50">
+          <div className="w-6 h-6 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+        </div>
+      )}
       <CategoryList
         categories={liveCategories}
         selected={selectedLiveCategory}

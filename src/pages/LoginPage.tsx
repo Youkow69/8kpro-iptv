@@ -257,7 +257,7 @@ export default function LoginPage() {
             Appuyez apr&egrave;s que votre fournisseur a activ&eacute; votre MAC
           </p>
           <a
-            href="https://8kiptv.com"
+            href="https://8kiptv.ovh/index.html"
             target="_blank"
             rel="noopener noreferrer"
             className={`mt-3 w-full flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-semibold rounded-xl shadow-lg hover:shadow-emerald-500/25 transition-all duration-300 ${
@@ -347,26 +347,8 @@ export default function LoginPage() {
           </button>
         </form>
 
-        {/* Request a test */}
-        <div className="mt-6 text-center">
-          <p className={`text-text-secondary mb-2 ${isTV ? 'text-sm' : 'text-xs'}`}>
-            Pas encore d'abonnement ?
-          </p>
-          <a
-            href="https://8kiptv.ovh/index.html"
-            target="_blank"
-            rel="noopener noreferrer"
-            className={`inline-flex items-center gap-2 bg-gradient-to-r from-accent/20 to-amber-600/20 hover:from-accent/30 hover:to-amber-600/30 border border-accent/30 text-accent font-semibold rounded-xl transition-all hover:shadow-lg hover:shadow-accent/10 ${
-              isTV ? 'px-6 py-3 text-base' : 'px-5 py-2.5 text-sm'
-            }`}
-          >
-            <Sparkles className={isTV ? 'w-5 h-5' : 'w-4 h-4'} />
-            Demander un test gratuit
-          </a>
-        </div>
-
-        <p className={`text-center text-text-secondary/30 mt-4 font-mono ${isTV ? 'text-sm' : 'text-[10px]'}`}>
-          8K Player v2.5.0
+        <p className={`text-center text-text-secondary/30 mt-6 font-mono ${isTV ? 'text-sm' : 'text-[10px]'}`}>
+          8K Player v2.7.0
         </p>
       </div>
     </div>
