@@ -105,6 +105,25 @@ export default function Player() {
   const loadStream = useCallback((url: string, video: HTMLVideoElement) => {
     const isHls = url.includes('.m3u8');
     const isMpegTs = url.includes('.ts') && !url.includes('.m3u8');
+    const isProxied = url.includes('/api/proxy');
+
+    // Direct URLs (native app): use native <video> element, NOT hls.js
+    // Native <video> has no CORS restrictions and supports hardware HEVC
+    if (!isProxied) {
+      video.src = url;
+      video.addEventListener('canplay', () => {
+        setLoading(false);
+        retryCountRef.current = 0;
+        video.play().catch(() => {});
+      }, { once: true });
+      video.addEventListener('error', () => {
+        setLoading(false);
+        setError(t('player.error.network'));
+      }, { once: true });
+      video.play().catch(() => {});
+      return;
+    }
+
     if (isHls && Hls.isSupported()) {
       // Proxy already rewrites m3u8 segment URLs - no xhrSetup needed
       const hls = new Hls({
