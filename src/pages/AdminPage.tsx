@@ -11,6 +11,13 @@ import { useAdminStore, setAdminPassword, type TrialRequest, type MacDevice } fr
 import { Logo } from '../components/Sidebar';
 import { playClick, playSuccess, playError } from '../services/sounds';
 
+// API base: use Vercel URL on native (APK has no local API server)
+const API_BASE = (() => {
+  const cap = (window as any)?.Capacitor;
+  const isNative = cap && (typeof cap.isNativePlatform === 'function' ? cap.isNativePlatform() : !!cap.platform && cap.platform !== 'web');
+  return isNative ? 'https://8kproultimate.vercel.app' : '';
+})();
+
 type AdminTab = 'dashboard' | 'trials' | 'mac' | 'config' | 'logs' | 'settings';
 
 export default function AdminPage() {
@@ -456,7 +463,7 @@ function MacTab() {
   // Load devices from Supabase
   const loadFromSupabase = useCallback(async () => {
       try {
-        const res = await fetch('/api/activate?list=all&adminKey=8kpro2026');
+        const res = await fetch(`${API_BASE}/api/activate?list=all&adminKey=8kpro2026`);
         if (!res.ok) throw new Error('Failed to load');
         const remoteDevices = await res.json();
         if (Array.isArray(remoteDevices)) {
@@ -502,7 +509,7 @@ function MacTab() {
 
   // Sync device to Supabase via API
   const syncToApi = async (mac: string, m3uUrl: string, label: string, username: string, notes: string, deviceKey?: string) => {
-    const res = await fetch('/api/activate', {
+    const res = await fetch(`${API_BASE}/api/activate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -523,7 +530,7 @@ function MacTab() {
   };
 
   const deleteFromApi = async (mac: string) => {
-    await fetch(`/api/activate?mac=${encodeURIComponent(mac)}`, { method: 'DELETE' });
+    await fetch(`${API_BASE}/api/activate?mac=${encodeURIComponent(mac)}`, { method: 'DELETE' });
   };
 
   const handleAdd = async () => {

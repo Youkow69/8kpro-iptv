@@ -10,6 +10,13 @@ import { playClick, playWelcome, playError, playSuccess } from '../services/soun
 
 const DEFAULT_SERVER = 'http://smarter8k.ru';
 
+// API base: use Vercel URL on native (APK has no local API server)
+const API_BASE = (() => {
+  const cap = (window as any)?.Capacitor;
+  const isNative = cap && (typeof cap.isNativePlatform === 'function' ? cap.isNativePlatform() : !!cap.platform && cap.platform !== 'web');
+  return isNative ? 'https://8kproultimate.vercel.app' : '';
+})();
+
 // Generate a persistent device MAC and key
 function getDeviceId(): { mac: string; key: string } {
   const DEVICE_KEY = '8k_device_id';
@@ -69,7 +76,7 @@ export default function LoginPage() {
     setActivating(true);
     const macAddr = deviceId.mac.toUpperCase();
     try {
-      const res = await fetch(`/api/activate?mac=${encodeURIComponent(macAddr)}`);
+      const res = await fetch(`${API_BASE}/api/activate?mac=${encodeURIComponent(macAddr)}`);
       const data = await res.json();
       if (data.activated) {
         const creds = { server: data.server, username: data.username, password: data.password };
