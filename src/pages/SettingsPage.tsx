@@ -14,7 +14,10 @@ export default function SettingsPage() {
   const [soundsOn, setSoundsOn] = useState(getSoundsEnabled());
   const [updateStatus, setUpdateStatus] = useState<'idle' | 'checking' | 'available' | 'latest'>('idle');
   const [latestVersion, setLatestVersion] = useState('');
-  const APP_VERSION = 'v2.5.0';
+  const [downloadUrl, setDownloadUrl] = useState('');
+  const APP_VERSION = 'v2.9.0';
+
+  const isNativeApp = !!(window as any)?.Capacitor?.isNativePlatform?.();
 
   const checkUpdate = async () => {
     setUpdateStatus('checking');
@@ -23,6 +26,9 @@ export default function SettingsPage() {
       const data = await res.json();
       const remote = data.tag_name || '';
       setLatestVersion(remote);
+      // Find APK download URL from release assets
+      const apkAsset = data.assets?.find((a: any) => a.name?.endsWith('.apk'));
+      if (apkAsset) setDownloadUrl(apkAsset.browser_download_url);
       if (remote && remote !== APP_VERSION) {
         setUpdateStatus('available');
       } else {
@@ -35,27 +41,22 @@ export default function SettingsPage() {
     }
   };
 
-  const isNativeApp = !!(window as any)?.Capacitor?.isNativePlatform?.();
-
   const doUpdate = () => {
-    // Step 1: Clear all caches and service workers
-    const clearAndReload = async () => {
-      if ('serviceWorker' in navigator) {
-        const regs = await navigator.serviceWorker.getRegistrations();
-        await Promise.all(regs.map((r) => r.unregister()));
-        const keys = await caches.keys();
-        await Promise.all(keys.map((k) => caches.delete(k)));
-      }
-      // Force hard reload bypassing cache
-      window.location.href = window.location.origin + '/?_=' + Date.now();
-    };
-
     if (isNativeApp) {
-      // Native: clear cache and reload (gets latest from Vercel)
-      clearAndReload();
+      // Native APK: download new APK from GitHub
+      const url = downloadUrl || 'https://github.com/Youkow69/8kpro-iptv/releases/latest/download/8kpro.apk';
+      window.open(url, '_system');
     } else {
-      // Web: download APK
-      window.open('https://8kproultimate.vercel.app/api/dl', '_blank');
+      // Web: clear SW + cache and reload
+      (async () => {
+        if ('serviceWorker' in navigator) {
+          const regs = await navigator.serviceWorker.getRegistrations();
+          await Promise.all(regs.map((r) => r.unregister()));
+          const keys = await caches.keys();
+          await Promise.all(keys.map((k) => caches.delete(k)));
+        }
+        window.location.href = window.location.origin + '/?_=' + Date.now();
+      })();
     }
   };
 

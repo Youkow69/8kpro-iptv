@@ -2,7 +2,7 @@ export const config = {
   runtime: 'edge',
 };
 
-const APK_URL = 'https://github.com/Youkow69/8kpro-iptv/releases/download/v2.4.0/8kpro.apk';
+const APK_URL = 'https://github.com/Youkow69/8kpro-iptv/releases/latest/download/8kpro.apk';
 
 export default async function handler(req: Request): Promise<Response> {
   const url = new URL(req.url);
