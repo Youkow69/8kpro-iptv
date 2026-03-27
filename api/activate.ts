@@ -26,12 +26,25 @@ async function supaFetch(path: string, options?: RequestInit) {
 export default async function handler(req: Request): Promise<Response> {
   if (req.method === 'OPTIONS') return new Response(null, { status: 200, headers });
 
-  // GET - check if MAC is activated (player app calls this)
+  // GET - check if MAC is activated OR list all devices (admin)
   if (req.method === 'GET') {
     const url = new URL(req.url);
     const rawMac = url.searchParams.get('mac')?.toUpperCase().replace(/[^0-9A-F]/g, '') || '';
+    const listAll = url.searchParams.get('list') === 'all';
+    const adminKey = url.searchParams.get('adminKey');
+
+    // Admin: list all devices
+    if (listAll) {
+      if (adminKey !== (process.env.ADMIN_KEY || '8kpro2026')) {
+        return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers });
+      }
+      const res = await supaFetch('devices?select=*&order=created_at.desc');
+      const devices = await res.json();
+      return new Response(JSON.stringify(devices), { status: 200, headers });
+    }
+
+    // Client: check single MAC
     if (!rawMac) return new Response(JSON.stringify({ error: 'MAC required' }), { status: 400, headers });
-    // Normalize to XX:XX:XX:XX:XX:XX format
     const mac = rawMac.match(/.{1,2}/g)?.join(':') || rawMac;
 
     const res = await supaFetch(`devices?mac=eq.${encodeURIComponent(mac)}&status=eq.active&select=*`);

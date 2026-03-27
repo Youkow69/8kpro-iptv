@@ -267,13 +267,6 @@ button:active::after {
 img {
   transition: opacity 0.3s ease;
 }
-img[loading="lazy"] {
-  opacity: 0;
-}
-img[loading="lazy"].loaded,
-img[loading="lazy"][complete] {
-  opacity: 1;
-}
 
 /* Better scrollbar on hover */
 *:hover {
@@ -327,6 +320,124 @@ video {
   .player-hint-rotate {
     display: flex;
   }
+}
+
+/* Stagger list items animation */
+.stagger-list > *:nth-child(n) {
+  animation: slide-up 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.stagger-list > *:nth-child(1) { animation-delay: 0ms; }
+.stagger-list > *:nth-child(2) { animation-delay: 30ms; }
+.stagger-list > *:nth-child(3) { animation-delay: 60ms; }
+.stagger-list > *:nth-child(4) { animation-delay: 90ms; }
+.stagger-list > *:nth-child(5) { animation-delay: 120ms; }
+.stagger-list > *:nth-child(6) { animation-delay: 150ms; }
+.stagger-list > *:nth-child(7) { animation-delay: 180ms; }
+.stagger-list > *:nth-child(8) { animation-delay: 210ms; }
+.stagger-list > *:nth-child(9) { animation-delay: 240ms; }
+.stagger-list > *:nth-child(10) { animation-delay: 270ms; }
+
+/* Glow border animation on active items */
+@keyframes glow-border {
+  0%, 100% { border-color: rgba(212, 160, 23, 0.3); }
+  50% { border-color: rgba(212, 160, 23, 0.7); }
+}
+.glow-border-active {
+  animation: glow-border 2s ease-in-out infinite;
+}
+
+/* Smooth category chip animation */
+@keyframes chip-pop {
+  0% { transform: scale(0.8); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.chip-enter {
+  animation: chip-pop 0.2s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Player overlay fade */
+@keyframes player-fade-in {
+  from { opacity: 0; backdrop-filter: blur(0); }
+  to { opacity: 1; backdrop-filter: blur(20px); }
+}
+.player-enter {
+  animation: player-fade-in 0.3s ease-out;
+}
+
+/* Smooth number counter */
+@keyframes count-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.count-enter {
+  animation: count-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Favorite star pop animation */
+@keyframes star-pop {
+  0% { transform: scale(0); }
+  50% { transform: scale(1.4); }
+  100% { transform: scale(1); }
+}
+.star-pop {
+  animation: star-pop 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Bottom nav slide up on load */
+@keyframes nav-slide-up {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+.nav-enter {
+  animation: nav-slide-up 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Smooth channel card hover with glow */
+.channel-card {
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.channel-card:hover {
+  background: rgba(212, 160, 23, 0.06);
+  box-shadow: inset 3px 0 0 #d4a017;
+}
+.channel-card:active {
+  transform: scale(0.98);
+}
+
+/* Logo icon bounce on load */
+@keyframes logo-bounce {
+  0% { transform: scale(0) rotate(-10deg); }
+  60% { transform: scale(1.1) rotate(2deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+.logo-enter {
+  animation: logo-bounce 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Poster card 3D tilt on hover */
+.poster-tilt {
+  transition: transform 0.3s ease;
+  transform-style: preserve-3d;
+}
+.poster-tilt:hover {
+  transform: perspective(800px) rotateY(-3deg) rotateX(2deg) scale(1.03);
+}
+
+/* Shimmer on loading cards */
+@keyframes card-shimmer {
+  0% { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+.card-skeleton {
+  background: linear-gradient(90deg, #1c1c1c 0%, #2a2a2a 40%, #1c1c1c 80%);
+  background-size: 800px 100%;
+  animation: card-shimmer 1.5s infinite linear;
+  border-radius: 12px;
+}
+
+/* Safe area for bottom nav */
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 /* High contrast mode support */

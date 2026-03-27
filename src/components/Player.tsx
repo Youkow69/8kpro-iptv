@@ -8,10 +8,9 @@ import {
 } from 'lucide-react';
 import { useIptvStore } from '../store/iptvStore';
 import { useAuthStore } from '../store/authStore';
-import { buildLiveStreamUrl } from '../services/xtreamApi';
+import { buildLiveStreamUrl, getOriginalUrlFromProxy, proxyStreamUrl } from '../services/xtreamApi';
 import { useTranslation } from '../i18n/useTranslation';
 import { useIsTV } from '../hooks/useIsTV';
-import { streamPreloader } from '../services/preloader';
 import { playChannelUp, playChannelDown, playClick, playFavoriteAdd, playFavoriteRemove } from '../services/sounds';
 
 export default function Player() {
@@ -30,6 +29,8 @@ export default function Player() {
   const mpegtsRef = useRef<mpegts.Player | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const retryCountRef = useRef(0);
+  const watchdogRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const isReconnectRef = useRef(false); // true = silent reconnect, don't show spinner
   const maxRetries = 3;
 
   const [loading, setLoading] = useState(true);
@@ -40,7 +41,7 @@ export default function Player() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showControls, setShowControls] = useState(true);
   const [volume, setVolume] = useState(1);
-  const [channelTransition, setChannelTransition] = useState(false);
+
   const controlsTimer = useRef<ReturnType<typeof setTimeout>>(null);
 
   const iconSize = isTV ? 'w-7 h-7' : 'w-5 h-5';
@@ -61,63 +62,79 @@ export default function Player() {
     return () => document.removeEventListener('fullscreenchange', handleFs);
   }, []);
 
-  // Cleanup players helper
+  // Cleanup players helper - pause first to prevent AbortError spam
   const cleanupPlayers = useCallback(() => {
+    if (watchdogRef.current) { clearInterval(watchdogRef.current); watchdogRef.current = null; }
+    const video = videoRef.current;
+    if (video) {
+      video.pause();
+      video.muted = true; // Prevent audio bleed during cleanup
+    }
     if (hlsRef.current) {
       try { hlsRef.current.destroy(); } catch {}
       hlsRef.current = null;
     }
     if (mpegtsRef.current) {
-      try { mpegtsRef.current.destroy(); } catch {}
+      try {
+        mpegtsRef.current.pause();
+        mpegtsRef.current.unload();
+        mpegtsRef.current.detachMediaElement();
+        mpegtsRef.current.destroy();
+      } catch {}
       mpegtsRef.current = null;
     }
-    if (videoRef.current) {
-      videoRef.current.removeAttribute('src');
-      videoRef.current.load();
+    if (video) {
+      video.removeAttribute('src');
+      try { video.load(); } catch {}
+      video.muted = muted; // Restore mute state
     }
-  }, []);
+  }, [muted]);
 
-  // Retry logic
+  // Retry logic - reload the stream, not the page
   const retryStream = useCallback(() => {
-    if (!playerUrl || retryCountRef.current >= maxRetries) {
-      setError(t('player.error.fatal'));
-      return;
-    }
-    retryCountRef.current++;
-    setError('');
+    if (!playerUrl || !videoRef.current) return;
+    retryCountRef.current = 0;
     setLoading(true);
+    setError('');
     cleanupPlayers();
-    // Small delay before retry
-    setTimeout(() => {
-      if (videoRef.current) {
-        loadStream(playerUrl, videoRef.current);
-      }
-    }, 1000);
-  }, [playerUrl]);
+    // Force re-render by updating playerUrl effect
+    setTimeout(() => window.location.reload(), 300);
+  }, [playerUrl, cleanupPlayers]);
 
   // Main stream loader
   const loadStream = useCallback((url: string, video: HTMLVideoElement) => {
     const isHls = url.includes('.m3u8');
-    const isMpegTs = url.includes('.ts');
-
+    const isMpegTs = url.includes('.ts') && !url.includes('.m3u8');
     if (isHls && Hls.isSupported()) {
+      // Proxy already rewrites m3u8 segment URLs - no xhrSetup needed
       const hls = new Hls({
         enableWorker: true,
         lowLatencyMode: true,
-        maxBufferLength: 10,
-        maxMaxBufferLength: 30,
-        maxBufferHole: 0.5,
-        fragLoadingMaxRetry: 6,
-        fragLoadingRetryDelay: 1000,
-        manifestLoadingMaxRetry: 4,
-        levelLoadingMaxRetry: 4,
+        maxBufferLength: 8,
+        maxMaxBufferLength: 20,
+        maxBufferHole: 1.5,
+        fragLoadingMaxRetry: 10,
+        fragLoadingRetryDelay: 300,
+        manifestLoadingMaxRetry: 6,
+        manifestLoadingRetryDelay: 300,
+        levelLoadingMaxRetry: 6,
         startFragPrefetch: true,
+        backBufferLength: 5,
+        liveSyncDurationCount: 1,
+        liveMaxLatencyDurationCount: 5,
+        startLevel: -1,
+        progressive: true,
+        maxStarvationDelay: 2,
+        maxLoadingDelay: 2,
       });
       hlsRef.current = hls;
       hls.loadSource(url);
       hls.attachMedia(video);
 
+      let hlsStarted = false;
+
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
+        hlsStarted = true;
         setLoading(false);
         retryCountRef.current = 0;
         video.play().catch(() => {});
@@ -126,13 +143,19 @@ export default function Player() {
       hls.on(Hls.Events.ERROR, (_event, data) => {
         if (data.fatal) {
           if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
-            // Auto-retry network errors
-            if (retryCountRef.current < maxRetries) {
+            if (retryCountRef.current < 8) {
+              // More retries for HLS - each segment can fail independently
               hls.startLoad();
               retryCountRef.current++;
             } else {
-              setLoading(false);
-              setError(t('player.error.network'));
+              // Fully reconnect after too many segment failures
+              setLoading(true);
+              try { hls.destroy(); } catch {}
+              hlsRef.current = null;
+              retryCountRef.current = 0;
+              setTimeout(() => {
+                if (videoRef.current) loadStream(url, videoRef.current);
+              }, 1000);
             }
           } else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
             hls.recoverMediaError();
@@ -142,7 +165,39 @@ export default function Player() {
           }
         }
       });
+
+      // HLS watchdog - reconnect if video stops progressing
+      let hlsLastTime = 0;
+      let hlsStallCount = 0;
+      if (watchdogRef.current) clearInterval(watchdogRef.current);
+      watchdogRef.current = setInterval(() => {
+        if (!hlsStarted) return;
+        const now = video.currentTime;
+        if (now === hlsLastTime && !video.paused) {
+          hlsStallCount++;
+          if (hlsStallCount >= 4) { // 20s no progress -> full reconnect
+            hlsStallCount = 0;
+            setLoading(true);
+            try { hls.destroy(); } catch {}
+            hlsRef.current = null;
+            retryCountRef.current = 0;
+            setTimeout(() => {
+              if (videoRef.current) loadStream(url, videoRef.current);
+            }, 500);
+          }
+        } else {
+          hlsStallCount = 0;
+        }
+        hlsLastTime = now;
+      }, 5000);
+
+      // Handle rebuffering for HLS too
+      video.addEventListener('waiting', () => { if (hlsStarted) setLoading(true); });
+      video.addEventListener('playing', () => { setLoading(false); setError(''); });
     } else if (isMpegTs && mpegts.isSupported()) {
+      void isReconnectRef.current; // was isSilent
+      isReconnectRef.current = false; // Reset for next time
+
       const player = mpegts.createPlayer({
         type: 'mpegts',
         url: url,
@@ -150,109 +205,148 @@ export default function Player() {
       }, {
         enableWorker: true,
         enableStashBuffer: true,
-        stashInitialSize: 384 * 1024,
-        liveBufferLatencyChasing: true,
-        liveBufferLatencyMaxLatency: 10,
-        liveBufferLatencyMinRemain: 3,
+        stashInitialSize: 128 * 1024,
+        liveBufferLatencyChasing: false,
         autoCleanupSourceBuffer: true,
-        autoCleanupMaxBackwardDuration: 60,
-        autoCleanupMinBackwardDuration: 30,
+        autoCleanupMaxBackwardDuration: 30,
+        autoCleanupMinBackwardDuration: 15,
+        fixAudioTimestampGap: true,
+        seekType: 'range',
       });
       mpegtsRef.current = player;
       player.attachMediaElement(video);
       player.load();
 
-      let hasStarted = false;
-      let loadTimeout = setTimeout(() => {
+      let hasStarted = false; // Only true after canplay fires
+
+      // If mpegts.js can't start in 12s, try fallbacks:
+      // 1) Native .ts (handles HEVC via hardware decoder)
+      // 2) HLS .m3u8 via hls.js (handles streams mpegts.js can't parse)
+      const loadTimeout = setTimeout(() => {
         if (!hasStarted) {
-          setLoading(false);
-          setError(t('player.error.network'));
+          clearInterval(playNudge);
+          try { player.pause(); player.unload(); player.detachMediaElement(); player.destroy(); } catch {}
+          mpegtsRef.current = null;
+
+          // Fallback 1: native video.src with .ts (HEVC hardware decode)
+          video.src = url;
+          let nativeTimeout: ReturnType<typeof setTimeout>;
+          const onNativeCanplay = () => {
+            clearTimeout(nativeTimeout);
+            setLoading(false);
+            video.play().catch(() => {});
+          };
+          const tryHlsFallback = () => {
+            video.removeEventListener('canplay', onNativeCanplay);
+            video.removeAttribute('src');
+            try { video.load(); } catch {}
+            // Fallback 2: HLS .m3u8
+            const originalUrl = getOriginalUrlFromProxy(url);
+            const hlsUrl = originalUrl
+              ? proxyStreamUrl(originalUrl.replace(/\.ts$/, '.m3u8'))
+              : url.replace(/\.ts$/, '.m3u8');
+            if (Hls.isSupported()) {
+              const hlsFallback = new Hls({
+                enableWorker: true,
+                maxBufferLength: 10,
+                fragLoadingMaxRetry: 6,
+                manifestLoadingMaxRetry: 4,
+                liveSyncDurationCount: 1,
+              });
+              hlsRef.current = hlsFallback;
+              hlsFallback.loadSource(hlsUrl);
+              hlsFallback.attachMedia(video);
+              hlsFallback.on(Hls.Events.MANIFEST_PARSED, () => {
+                setLoading(false);
+                video.play().catch(() => {});
+              });
+              hlsFallback.on(Hls.Events.ERROR, (_e, data) => {
+                if (data.fatal) {
+                  setLoading(false);
+                  setError(t('player.error.network'));
+                }
+              });
+            } else {
+              // Safari: native HLS
+              video.src = hlsUrl;
+              video.addEventListener('canplay', () => { setLoading(false); video.play().catch(() => {}); }, { once: true });
+              video.addEventListener('error', () => { setLoading(false); setError(t('player.error.network')); }, { once: true });
+              video.play().catch(() => {});
+            }
+          };
+          video.addEventListener('canplay', onNativeCanplay, { once: true });
+          video.addEventListener('error', tryHlsFallback, { once: true });
+          // Give native 8s to start, else try HLS
+          nativeTimeout = setTimeout(() => {
+            if (video.readyState < 3) tryHlsFallback();
+          }, 8000);
+          video.play().catch(() => {});
         }
-      }, 20000);
+      }, 12000); // 12s then start fallback chain
 
-      // Auto-reconnect: detect ALL types of stream interruption
-      let lastTime = 0;
-      let freezeCheckInterval: ReturnType<typeof setInterval> | null = null;
-      let isReconnecting = false;
+      // Periodically try play() while loading - some streams need a nudge
+      const playNudge = setInterval(() => {
+        if (hasStarted) { clearInterval(playNudge); return; }
+        if (video.readyState >= 2) {
+          video.play().catch(() => {});
+        }
+      }, 2000);
 
-      const autoReconnect = (reason: string) => {
-        if (isReconnecting) return;
-        isReconnecting = true;
-        console.log('[Player] ' + reason + ', reconnecting...');
-        if (freezeCheckInterval) { clearInterval(freezeCheckInterval); freezeCheckInterval = null; }
-        cleanupPlayers();
+      // Silent reconnect for real failures only
+      let reconnecting = false;
+      const silentReconnect = () => {
+        if (reconnecting) return;
+        reconnecting = true;
+        clearInterval(playNudge);
+        try { player.pause(); player.unload(); player.detachMediaElement(); player.destroy(); } catch {}
+        mpegtsRef.current = null;
+        clearTimeout(loadTimeout);
+        isReconnectRef.current = true;
         setTimeout(() => {
-          isReconnecting = false;
-          loadStream(url, video);
+          if (videoRef.current) {
+            reconnecting = false;
+            loadStream(url, videoRef.current);
+          }
         }, 500);
       };
 
-      // 1. Monitor currentTime - if stuck for 5s, reconnect
-      freezeCheckInterval = setInterval(() => {
-        if (!hasStarted || isReconnecting) return;
-        // If paused but we didn't pause it manually, it's a freeze
-        if (video.paused && hasStarted) {
-          autoReconnect('Stream paused unexpectedly (proxy timeout)');
-          return;
-        }
-        const currentTime = video.currentTime;
-        if (currentTime === lastTime && currentTime > 0) {
-          autoReconnect('Stream frozen (currentTime stuck at ' + currentTime + ')');
-        }
-        lastTime = currentTime;
-      }, 4000);
-
-      // 2. MediaSource ended = proxy cut the connection
-      video.addEventListener('ended', () => {
-        if (hasStarted) autoReconnect('Stream ended (proxy timeout)');
-      });
-
-      // 3. Pause event (not user-initiated) = stream ran out of data
-      video.addEventListener('pause', () => {
-        if (hasStarted && !isReconnecting) {
-          // Wait 2s to see if it was user-initiated
-          setTimeout(() => {
-            if (video.paused && hasStarted && !isReconnecting) {
-              autoReconnect('Stream paused (buffer exhausted)');
-            }
-          }, 2000);
-        }
-      });
-
-      // 4. Stall/waiting events
-      video.addEventListener('stalled', () => {
-        if (hasStarted) setTimeout(() => { if (video.paused) autoReconnect('Stall detected'); }, 3000);
-      });
-      video.addEventListener('waiting', () => {
-        if (hasStarted) setTimeout(() => { if (video.paused) autoReconnect('Waiting timeout'); }, 5000);
-      });
-
-      player.on(mpegts.Events.ERROR, (_type: string, _detail: string, info: { msg?: string }) => {
-        if (!hasStarted) {
-          clearTimeout(loadTimeout);
-          if (retryCountRef.current < maxRetries) {
-            retryCountRef.current++;
-            cleanupPlayers();
-            setTimeout(() => loadStream(url, video), 1500);
-          } else {
-            setLoading(false);
-            setError(t('player.error.network') + (info?.msg ? `: ${info.msg}` : ''));
+      // Watchdog: reconnect if video stops progressing for 10s
+      let lastTime = 0;
+      let stallCount = 0;
+      if (watchdogRef.current) clearInterval(watchdogRef.current);
+      watchdogRef.current = setInterval(() => {
+        if (!hasStarted || reconnecting) return;
+        const now = video.currentTime;
+        if (now === lastTime && !video.paused) {
+          stallCount++;
+          if (stallCount >= 2) { // 10s no progress -> reconnect
+            stallCount = 0;
+            silentReconnect();
           }
         } else {
-          // Stream was playing but errored - auto reconnect
-          console.log('[Player] Stream error during playback, reconnecting...');
-          cleanupPlayers();
-          setTimeout(() => loadStream(url, video), 1000);
+          stallCount = 0;
         }
+        lastTime = now;
+      }, 5000);
+
+      // Handle fatal errors
+      player.on(mpegts.Events.ERROR, () => {
+        if (hasStarted && !reconnecting) silentReconnect();
+      });
+
+      // Stream ended -> reconnect
+      video.addEventListener('ended', () => {
+        if (hasStarted) silentReconnect();
       });
 
       video.addEventListener('canplay', () => {
         hasStarted = true;
         clearTimeout(loadTimeout);
+        clearInterval(playNudge);
         retryCountRef.current = 0;
         setLoading(false);
         video.play().catch(() => {});
-      }, { once: true });
+      });
 
       video.addEventListener('playing', () => {
         hasStarted = true;
@@ -261,6 +355,27 @@ export default function Player() {
         setLoading(false);
         setError('');
       }, { once: true });
+
+      // Once started, NEVER show loading spinner again - just freeze on last frame
+      const onWaiting = () => {}; // Do nothing - no spinner
+      const onPlaying = () => { setLoading(false); setError(''); };
+      const onStalled = () => {
+        // If stalled for 5s after start, try seeking slightly forward
+        if (hasStarted && video.buffered.length > 0) {
+          setTimeout(() => {
+            if (video.paused || video.readyState < 3) {
+              const end = video.buffered.end(video.buffered.length - 1);
+              if (end > video.currentTime + 0.5) {
+                video.currentTime = end - 0.3;
+              }
+              video.play().catch(() => {});
+            }
+          }, 3000);
+        }
+      };
+      video.addEventListener('waiting', onWaiting);
+      video.addEventListener('playing', onPlaying);
+      video.addEventListener('stalled', onStalled);
 
       player.play();
     } else {
@@ -367,36 +482,24 @@ export default function Player() {
   useEffect(() => {
     if (!playerUrl || !videoRef.current) return;
 
-    const video = videoRef.current;
     retryCountRef.current = 0;
     setLoading(true);
     setError('');
-    setChannelTransition(true);
-    setTimeout(() => setChannelTransition(false), 300);
+    setShowControls(false);
 
     cleanupPlayers();
-    loadStream(playerUrl, video);
 
-    // Pre-cache adjacent channels
-    if (playerMode === 'live' && credentials && playerStreamId && liveStreams.length > 0) {
-      const idx = liveStreams.findIndex((s) => s.stream_id === playerStreamId);
-      if (idx !== -1) {
-        const prevIdx = (idx - 1 + liveStreams.length) % liveStreams.length;
-        const nextIdx = (idx + 1) % liveStreams.length;
-        const prevUrl = buildLiveStreamUrl(credentials, liveStreams[prevIdx].stream_id);
-        const nextUrl = buildLiveStreamUrl(credentials, liveStreams[nextIdx].stream_id);
-        const preloadTimer = setTimeout(() => {
-          streamPreloader.preload(prevUrl);
-          streamPreloader.preload(nextUrl);
-        }, 3000);
-        return () => {
-          clearTimeout(preloadTimer);
-          cleanupPlayers();
-        };
-      }
-    }
+    // Small delay lets browser release old resources before loading new stream
+    const timer = setTimeout(() => {
+      if (videoRef.current) loadStream(playerUrl, videoRef.current);
+    }, 150);
 
-    return () => cleanupPlayers();
+    // Pre-cache disabled - saves bandwidth and speeds up current stream loading
+
+    return () => {
+      clearTimeout(timer);
+      cleanupPlayers();
+    };
   }, [playerUrl]);
 
   const toggleFullscreen = () => {
@@ -440,6 +543,9 @@ export default function Player() {
     setShowChannelList(false);
   };
 
+  // Swipe gestures for mobile channel switching (must be before early return)
+  const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
+
   if (!playerUrl) return null;
 
   const isLive = playerMode === 'live';
@@ -451,9 +557,6 @@ export default function Player() {
 
   // Channel number display
   const currentIdx = liveStreams.findIndex((s) => s.stream_id === playerStreamId);
-
-  // Swipe gestures for mobile channel switching
-  const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY, time: Date.now() };
   };
@@ -478,24 +581,6 @@ export default function Player() {
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
-      {/* Channel transition overlay */}
-      {channelTransition && (
-        <div className="absolute inset-0 z-50 bg-black/90 flex items-center justify-center animate-scale-in">
-          <div className="text-center">
-            {currentIdx >= 0 && (
-              <div className="relative inline-block mb-3">
-                <div className="absolute inset-0 bg-accent/20 rounded-full blur-2xl" />
-                <p className="text-accent text-7xl font-black relative">{currentIdx + 1}</p>
-              </div>
-            )}
-            <p className="text-white text-2xl font-semibold mb-1">{playerTitle}</p>
-            {isLive && currentCategory && (
-              <p className="text-white/40 text-sm">{currentCategory.category_name}</p>
-            )}
-          </div>
-        </div>
-      )}
-
       {/* Top bar */}
       <div
         className={`absolute top-0 left-0 right-0 z-30 flex items-center justify-between bg-gradient-to-b from-black/90 via-black/50 to-transparent transition-opacity duration-300 ${
@@ -602,11 +687,20 @@ export default function Player() {
       {/* Video */}
       <div className="flex-1 flex items-center justify-center relative">
         {loading && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 z-10 bg-black/40">
-            <Loader2 className={`text-accent animate-spin ${isTV ? 'w-14 h-14' : 'w-10 h-10'}`} />
-            <p className={`text-white/60 ${isTV ? 'text-base' : 'text-sm'}`}>{t('player.loading')}</p>
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 z-10 bg-black/60 backdrop-blur-sm">
+            <div className="relative">
+              <Loader2 className={`text-accent animate-spin ${isTV ? 'w-16 h-16' : 'w-12 h-12'}`} />
+              <div className="absolute inset-0 rounded-full bg-accent/10 animate-ping" />
+            </div>
+            <div className="text-center">
+              <p className={`text-white/80 font-medium ${isTV ? 'text-lg' : 'text-base'}`}>{t('player.loading')}</p>
+              <p className="text-white/40 text-xs mt-1">Connexion au flux...</p>
+            </div>
             {retryCountRef.current > 0 && (
-              <p className="text-white/40 text-xs">Tentative {retryCountRef.current}/{maxRetries}...</p>
+              <div className="flex items-center gap-2 bg-white/5 px-3 py-1.5 rounded-full">
+                <RefreshCw className="w-3 h-3 text-accent animate-spin" />
+                <p className="text-white/50 text-xs">Tentative {retryCountRef.current}/{maxRetries}</p>
+              </div>
             )}
           </div>
         )}
@@ -629,6 +723,7 @@ export default function Player() {
           ref={videoRef}
           controls={false}
           autoPlay
+          preload="auto"
           className="w-full h-full bg-black object-contain"
           muted={muted}
           playsInline

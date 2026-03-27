@@ -126,7 +126,7 @@ export default function LivePage() {
               {showFavsOnly ? t('live.noFavorites') : t('live.noChannels')}
             </div>
           ) : viewMode === 'list' ? (
-            <div className="divide-y divide-white/5">
+            <div className="divide-y divide-white/5 stagger-list">
               {filtered.map((stream, i) => (
                 <ChannelCard
                   key={stream.stream_id}

@@ -12,7 +12,28 @@ createRoot(document.getElementById('root')!).render(
 // Register service worker for PWA/offline
 if ('serviceWorker' in navigator && import.meta.env.PROD) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch(() => {
+    navigator.serviceWorker.register('/sw.js').then((reg) => {
+      // Check for updates every 30 seconds
+      setInterval(() => reg.update(), 30000);
+
+      // When a new SW is found, skip waiting and reload
+      reg.addEventListener('updatefound', () => {
+        const newWorker = reg.installing;
+        if (newWorker) {
+          newWorker.addEventListener('statechange', () => {
+            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+              // New version ready - tell it to skip waiting
+              newWorker.postMessage('SKIP_WAITING');
+            }
+          });
+        }
+      });
+
+      // Reload when the new SW takes control
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        window.location.reload();
+      });
+    }).catch(() => {
       // Service worker registration failed - app works without it
     });
   });

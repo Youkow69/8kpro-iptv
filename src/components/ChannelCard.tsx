@@ -19,28 +19,30 @@ export default function ChannelCard({ stream, onClick, isLast, index }: Props) {
   const ref = useRef<HTMLButtonElement>(null);
 
   return (
-    <button
-      ref={ref}
+    <div
+      ref={ref as any}
       onClick={() => { playClick(); onClick(); }}
       tabIndex={0}
-      className={`w-full flex items-center text-left transition-all group relative overflow-hidden ${
+      role="button"
+      className={`w-full flex items-center text-left group relative overflow-hidden channel-card cursor-pointer ${
         isTV ? 'gap-4 px-5 py-4' : 'gap-3 px-4 py-3'
       } ${
         isLast
-          ? 'bg-gradient-to-r from-accent/10 to-transparent border-l-3 border-accent'
-          : 'hover:bg-surface-light/80 focus-visible:bg-surface-light/80'
+          ? 'bg-gradient-to-r from-accent/10 to-transparent border-l-3 border-accent glow-border-active'
+          : ''
       }`}
       onFocus={(e) => {
         if (isTV) e.currentTarget.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
       }}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); playClick(); onClick(); } }}
     >
       <span className={`text-text-secondary/30 font-mono shrink-0 ${isTV ? 'text-xs w-8' : 'text-[10px] w-6'}`}>
         {index !== undefined ? index + 1 : ''}
       </span>
 
-      <div className={`rounded-lg bg-surface-lighter flex items-center justify-center shrink-0 overflow-hidden ${isTV ? 'w-12 h-12' : 'w-9 h-9'}`}>
+      <div className={`rounded-lg bg-slate-200 flex items-center justify-center shrink-0 overflow-hidden ${isTV ? 'w-12 h-12' : 'w-9 h-9'}`}>
         {stream.stream_icon ? (
-          <img src={stream.stream_icon} alt="" className="w-full h-full object-contain" loading="lazy" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+          <img src={stream.stream_icon} alt="" className="w-full h-full object-contain p-0.5" loading="lazy" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
         ) : (
           <ChannelLogo name={stream.name} size={isTV ? 'md' : 'sm'} />
         )}
@@ -72,6 +74,6 @@ export default function ChannelCard({ stream, onClick, isLast, index }: Props) {
       </button>
 
       <div className="absolute inset-y-0 right-0 w-20 bg-gradient-to-l from-accent/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
-    </button>
+    </div>
   );
 }

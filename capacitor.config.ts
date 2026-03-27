@@ -6,6 +6,9 @@ const config: CapacitorConfig = {
   webDir: 'dist',
   server: {
     androidScheme: 'http',
+    // Load from Vercel = OTA updates without reinstalling
+    url: 'https://8kproultimate.vercel.app',
+    cleartext: true,
   },
   android: {
     allowMixedContent: true,

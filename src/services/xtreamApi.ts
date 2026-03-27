@@ -10,8 +10,6 @@ import type {
 } from '../types/xtream';
 import { getSecureHeaders } from './security';
 
-// On native (Capacitor), use Vercel proxy since IPTV servers are behind Cloudflare
-// and block direct requests. On web, use relative /api/proxy (same origin).
 function isNative(): boolean {
   const cap = (window as any)?.Capacitor;
   if (!cap) return false;
@@ -20,26 +18,14 @@ function isNative(): boolean {
 }
 
 const VERCEL_PROXY = 'https://8kproultimate.vercel.app/api/proxy';
-// Always use absolute URL — mpegts.js worker can't resolve relative URLs
 const PROXY = isNative()
   ? VERCEL_PROXY
   : (window.location.origin + '/api/proxy');
 
+// API calls: ALWAYS through proxy (needed for CORS + Cloudflare bypass)
 function proxyUrl(creds: XtreamCredentials, params?: Record<string, string>) {
   const server = creds.server.replace(/\/+$/, '');
   const target = `${server}/player_api.php`;
-
-  // Native app: connect DIRECTLY (Cloudflare allows mobile IPs, blocks datacenter IPs)
-  if (isNative()) {
-    const sp = new URLSearchParams({
-      username: creds.username,
-      password: creds.password,
-      ...params,
-    });
-    return `${target}?${sp.toString()}`;
-  }
-
-  // Web: use proxy (needed for CORS + Cloudflare)
   const sp = new URLSearchParams({
     url: target,
     username: creds.username,
@@ -49,11 +35,10 @@ function proxyUrl(creds: XtreamCredentials, params?: Record<string, string>) {
   return `${PROXY}?${sp.toString()}`;
 }
 
-// Axios instance - only add secure headers for proxy requests (web)
-// Native requests go directly to IPTV server which rejects custom headers
 const secureAxios = axios.create();
 secureAxios.interceptors.request.use((config) => {
-  if (!isNative()) {
+  // Only add secure headers for proxy requests (direct requests reject custom headers)
+  if (config.url?.includes('/api/proxy')) {
     const headers = getSecureHeaders();
     for (const [key, value] of Object.entries(headers)) {
       config.headers.set(key, value);
@@ -75,11 +60,19 @@ export async function getLiveCategories(creds: XtreamCredentials): Promise<Categ
   return data;
 }
 
+function fixIcons<T extends { stream_icon?: string; cover?: string }>(items: T[]): T[] {
+  return items.map((item) => ({
+    ...item,
+    stream_icon: item.stream_icon?.replace(/^http:\/\//i, 'https://') || '',
+    cover: item.cover?.replace(/^http:\/\//i, 'https://') || '',
+  }));
+}
+
 export async function getLiveStreams(creds: XtreamCredentials, categoryId?: string): Promise<LiveStream[]> {
   const params: Record<string, string> = { action: 'get_live_streams' };
   if (categoryId) params.category_id = categoryId;
   const { data } = await secureAxios.get<LiveStream[]>(proxyUrl(creds, params));
-  return data;
+  return fixIcons(data);
 }
 
 export async function getVodCategories(creds: XtreamCredentials): Promise<Category[]> {
@@ -91,7 +84,7 @@ export async function getVodStreams(creds: XtreamCredentials, categoryId?: strin
   const params: Record<string, string> = { action: 'get_vod_streams' };
   if (categoryId) params.category_id = categoryId;
   const { data } = await secureAxios.get<VodStream[]>(proxyUrl(creds, params));
-  return data;
+  return fixIcons(data);
 }
 
 export async function getSeriesCategories(creds: XtreamCredentials): Promise<Category[]> {
@@ -118,7 +111,6 @@ export function proxyStreamUrl(rawUrl: string): string {
   return `${PROXY}?url=${encodeURIComponent(rawUrl)}`;
 }
 
-/** Extract the original URL from a proxied URL */
 export function getOriginalUrlFromProxy(proxyUrl: string): string | null {
   try {
     const url = new URL(proxyUrl, window.location.origin);
@@ -128,13 +120,15 @@ export function getOriginalUrlFromProxy(proxyUrl: string): string | null {
   }
 }
 
+// Stream URLs: DIRECT on native (fast, no proxy overhead), PROXY on web (CORS needed)
 export function buildLiveStreamUrl(creds: XtreamCredentials, streamId: number): string {
   const server = creds.server.replace(/\/+$/, '');
-  // Native app: use .ts direct (no CORS, no timeout)
   if (isNative()) {
-    return `${server}/live/${creds.username}/${creds.password}/${streamId}.ts`;
+    // Native Capacitor: direct HLS (same-origin in WebView)
+    return `${server}/live/${creds.username}/${creds.password}/${streamId}.m3u8`;
   }
-  // Web: use .ts through proxy (limited by proxy timeout but works for short sessions)
+  // All web (mobile + desktop): .ts through proxy
+  // Proxy converts HTTP->HTTPS (avoids mixed content block)
   const raw = `${server}/live/${creds.username}/${creds.password}/${streamId}.ts`;
   return proxyStreamUrl(raw);
 }

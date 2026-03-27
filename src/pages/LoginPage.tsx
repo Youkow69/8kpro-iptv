@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Loader2, User, Lock, Trash2, ArrowRightLeft, Monitor, Copy, Check, Fingerprint } from 'lucide-react';
+import { Loader2, User, Lock, Trash2, ArrowRightLeft, Monitor, Copy, Check, Fingerprint, Sparkles } from 'lucide-react';
 import { authenticate } from '../services/xtreamApi';
 import { useAuthStore, type SavedAccount } from '../store/authStore';
 import { Logo } from '../components/Sidebar';
@@ -38,6 +38,9 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const isTV = useIsTV();
+  const longPressTimer = useRef<ReturnType<typeof setTimeout>>(null);
+  const onLogoDown = () => { longPressTimer.current = setTimeout(() => navigate('/admin'), 3000); };
+  const onLogoUp = () => { if (longPressTimer.current) clearTimeout(longPressTimer.current); };
 
   const copyToClipboard = async (text: string, field: string) => {
     try {
@@ -66,23 +69,11 @@ export default function LoginPage() {
     setActivating(true);
     const macAddr = deviceId.mac.toUpperCase();
     try {
-      const baseUrl = (window as any)?.Capacitor?.isNativePlatform?.()
-        ? 'https://8kproultimate.vercel.app'
-        : '';
-      const res = await fetch(`${baseUrl}/api/activate?mac=${encodeURIComponent(macAddr)}`);
+      const res = await fetch(`/api/activate?mac=${encodeURIComponent(macAddr)}`);
       const data = await res.json();
       if (data.activated) {
         const creds = { server: data.server, username: data.username, password: data.password };
-        // Try direct auth first (native), fallback to proxy (web)
-        let authRes;
-        try {
-          const directUrl = `${data.server}/player_api.php?username=${data.username}&password=${data.password}`;
-          const authResp = await fetch(directUrl);
-          authRes = await authResp.json();
-        } catch {
-          // Fallback to proxy-based auth
-          authRes = await authenticate(creds);
-        }
+        const authRes = await authenticate(creds);
         if (!authRes?.user_info?.auth) throw new Error('Auth failed');
         login(creds, authRes.user_info, authRes.server_info);
         playWelcome();
@@ -150,7 +141,10 @@ export default function LoginPage() {
 
       <div className={`w-full relative z-10 ${isTV ? 'max-w-xl' : 'max-w-md'}`}>
         <div className="flex flex-col items-center mb-8">
-          <div className="mb-5">
+          <div className="mb-5 select-none"
+            onMouseDown={onLogoDown} onMouseUp={onLogoUp} onMouseLeave={onLogoUp}
+            onTouchStart={onLogoDown} onTouchEnd={onLogoUp} onTouchCancel={onLogoUp}
+          >
             <Logo size="lg" />
           </div>
           <h1 className={`font-bold text-text-primary tracking-tight ${isTV ? 'text-4xl' : 'text-3xl'}`}>
@@ -262,6 +256,17 @@ export default function LoginPage() {
           <p className="text-center text-text-secondary/50 text-[11px] mt-2">
             Appuyez apr&egrave;s que votre fournisseur a activ&eacute; votre MAC
           </p>
+          <a
+            href="https://8kiptv.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className={`mt-3 w-full flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-semibold rounded-xl shadow-lg hover:shadow-emerald-500/25 transition-all duration-300 ${
+              isTV ? 'py-4 text-lg' : 'py-3 text-sm'
+            }`}
+          >
+            <Sparkles className="w-5 h-5" />
+            Demander un test gratuit
+          </a>
         </div>
 
         {error && (
@@ -342,8 +347,26 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <p className={`text-center text-text-secondary/30 mt-6 font-mono ${isTV ? 'text-sm' : 'text-[10px]'}`}>
-          8K Player v2.0
+        {/* Request a test */}
+        <div className="mt-6 text-center">
+          <p className={`text-text-secondary mb-2 ${isTV ? 'text-sm' : 'text-xs'}`}>
+            Pas encore d'abonnement ?
+          </p>
+          <a
+            href="https://8kiptv.ovh/index.html"
+            target="_blank"
+            rel="noopener noreferrer"
+            className={`inline-flex items-center gap-2 bg-gradient-to-r from-accent/20 to-amber-600/20 hover:from-accent/30 hover:to-amber-600/30 border border-accent/30 text-accent font-semibold rounded-xl transition-all hover:shadow-lg hover:shadow-accent/10 ${
+              isTV ? 'px-6 py-3 text-base' : 'px-5 py-2.5 text-sm'
+            }`}
+          >
+            <Sparkles className={isTV ? 'w-5 h-5' : 'w-4 h-4'} />
+            Demander un test gratuit
+          </a>
+        </div>
+
+        <p className={`text-center text-text-secondary/30 mt-4 font-mono ${isTV ? 'text-sm' : 'text-[10px]'}`}>
+          8K Player v2.5.0
         </p>
       </div>
     </div>

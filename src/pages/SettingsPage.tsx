@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
-import { LogOut, User, Server, Keyboard, Globe, ArrowRightLeft, Trash2, Sparkles, Crown, Zap, Volume2, VolumeX } from 'lucide-react';
+import { LogOut, User, Server, Keyboard, Globe, ArrowRightLeft, Trash2, Sparkles, Crown, Zap, Volume2, VolumeX, Download, CheckCircle, Loader2 } from 'lucide-react';
 import { useAuthStore, type SavedAccount } from '../store/authStore';
 import { useTranslation } from '../i18n/useTranslation';
 import { useIsTV } from '../hooks/useIsTV';
@@ -12,6 +12,52 @@ export default function SettingsPage() {
   const { t, lang, setLang, languages } = useTranslation();
   const isTV = useIsTV();
   const [soundsOn, setSoundsOn] = useState(getSoundsEnabled());
+  const [updateStatus, setUpdateStatus] = useState<'idle' | 'checking' | 'available' | 'latest'>('idle');
+  const [latestVersion, setLatestVersion] = useState('');
+  const APP_VERSION = 'v2.5.0';
+
+  const checkUpdate = async () => {
+    setUpdateStatus('checking');
+    try {
+      const res = await fetch('https://api.github.com/repos/Youkow69/8kpro-iptv/releases/latest');
+      const data = await res.json();
+      const remote = data.tag_name || '';
+      setLatestVersion(remote);
+      if (remote && remote !== APP_VERSION) {
+        setUpdateStatus('available');
+      } else {
+        setUpdateStatus('latest');
+        setTimeout(() => setUpdateStatus('idle'), 3000);
+      }
+    } catch {
+      setUpdateStatus('latest');
+      setTimeout(() => setUpdateStatus('idle'), 3000);
+    }
+  };
+
+  const isNativeApp = !!(window as any)?.Capacitor?.isNativePlatform?.();
+
+  const doUpdate = () => {
+    // Step 1: Clear all caches and service workers
+    const clearAndReload = async () => {
+      if ('serviceWorker' in navigator) {
+        const regs = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(regs.map((r) => r.unregister()));
+        const keys = await caches.keys();
+        await Promise.all(keys.map((k) => caches.delete(k)));
+      }
+      // Force hard reload bypassing cache
+      window.location.href = window.location.origin + '/?_=' + Date.now();
+    };
+
+    if (isNativeApp) {
+      // Native: clear cache and reload (gets latest from Vercel)
+      clearAndReload();
+    } else {
+      // Web: download APK
+      window.open('https://8kproultimate.vercel.app/api/dl', '_blank');
+    }
+  };
 
   const handleLogout = () => {
     playLogout();
@@ -247,7 +293,7 @@ export default function SettingsPage() {
           </div>
           <div className="flex items-center justify-between py-2 border-t border-white/5">
             <span className="text-text-secondary text-xs">Version</span>
-            <span className="text-accent text-xs font-mono">v2.0.0</span>
+            <span className="text-accent text-xs font-mono">v2.5.0</span>
           </div>
           <div className="flex items-center justify-between py-2 border-t border-white/5">
             <span className="text-text-secondary text-xs">Build</span>
@@ -288,6 +334,47 @@ export default function SettingsPage() {
         </button>
       </div>
 
+      {/* Update */}
+      <div className="glass rounded-2xl p-5 mb-4">
+        <div className="flex items-center gap-2 mb-3">
+          <Download className="w-4 h-4 text-accent" />
+          <h3 className="text-sm font-semibold text-text-primary">Mise à jour</h3>
+          <span className="ml-auto text-[10px] text-text-secondary font-mono">{APP_VERSION}</span>
+        </div>
+        {updateStatus === 'available' ? (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 bg-accent/10 border border-accent/20 rounded-xl px-4 py-3">
+              <Sparkles className="w-4 h-4 text-accent shrink-0" />
+              <div>
+                <p className="text-accent text-sm font-medium">Nouvelle version disponible !</p>
+                <p className="text-text-secondary text-[11px]">{latestVersion} — Vous avez {APP_VERSION}</p>
+              </div>
+            </div>
+            <button
+              onClick={doUpdate}
+              className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-accent to-amber-600 text-black font-semibold py-3 rounded-xl transition-all hover:shadow-lg hover:shadow-accent/25"
+            >
+              <Download className="w-4 h-4" />
+              {isNativeApp ? 'Installer la mise à jour' : 'Télécharger la mise à jour'}
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={checkUpdate}
+            disabled={updateStatus === 'checking'}
+            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-medium transition-all bg-surface-light/50 hover:bg-surface-light text-text-primary disabled:opacity-50"
+          >
+            {updateStatus === 'checking' ? (
+              <><Loader2 className="w-4 h-4 animate-spin" /> Vérification...</>
+            ) : updateStatus === 'latest' ? (
+              <><CheckCircle className="w-4 h-4 text-green-400" /> Vous êtes à jour !</>
+            ) : (
+              <><Download className="w-4 h-4 text-accent" /> Vérifier les mises à jour</>
+            )}
+          </button>
+        )}
+      </div>
+
       {/* Logout */}
       <button
         onClick={handleLogout}
@@ -298,7 +385,7 @@ export default function SettingsPage() {
       </button>
 
       <p className="text-text-secondary/20 text-[10px] text-center mb-8 font-mono">
-        8K Player v2.0 — {new Date().toISOString().slice(0, 10)}
+        8K Player v2.3 — {new Date().toISOString().slice(0, 10)}
       </p>
     </div>
   );

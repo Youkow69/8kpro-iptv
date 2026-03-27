@@ -28,9 +28,7 @@ export default function MediaCard({ name, image, rating, onClick }: Props) {
       ref={ref}
       onClick={() => { playClick(); onClick(); }}
       onFocus={onFocus}
-      className={`group relative rounded-xl overflow-hidden transition-all card-hover focus-visible:ring-2 focus-visible:ring-accent ${
-        isTV ? 'aspect-[2/3]' : 'aspect-[2/3]'
-      }`}
+      className={`group relative rounded-xl overflow-hidden transition-all poster-tilt focus-visible:ring-2 focus-visible:ring-accent aspect-[2/3]`}
     >
       {/* Image / Skeleton */}
       {image && !imgError ? (

@@ -16,6 +16,7 @@ export interface MacDevice {
   mac: string;
   label: string;
   username: string;
+  m3uUrl?: string;
   status: 'active' | 'blocked' | 'expired';
   addedDate: string;
   lastSeen?: string;

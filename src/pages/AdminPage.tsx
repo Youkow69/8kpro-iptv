@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Shield, BarChart3, Settings, LogOut, Clock,
   CheckCircle, XCircle, AlertCircle, Trash2, Download,
@@ -430,8 +430,48 @@ function TrialCard({ trial, onStatusChange, onDelete }: {
 function MacTab() {
   const { macDevices, addMacDevice, updateMacDevice, deleteMacDevice } = useAdminStore();
   const [showAddForm, setShowAddForm] = useState(false);
-  const [newMac, setNewMac] = useState({ mac: '', label: '', username: '', notes: '', status: 'active' as MacDevice['status'] });
+  const [newMac, setNewMac] = useState({ mac: '', label: '', username: '', m3uUrl: '', notes: '', status: 'active' as MacDevice['status'] });
   const [search, setSearch] = useState('');
+  const [syncing, setSyncing] = useState(false);
+  const [syncError, setSyncError] = useState('');
+  const [, setLoadingRemote] = useState(true);
+
+  // Load devices from Supabase on mount (sync across devices)
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch('/api/activate?list=all&adminKey=8kpro2026');
+        if (!res.ok) throw new Error('Failed to load');
+        const remoteDevices = await res.json();
+        if (Array.isArray(remoteDevices)) {
+          // Merge remote devices into local store (remote is source of truth)
+          const localMacs = new Set(macDevices.map((d) => d.mac));
+          for (const rd of remoteDevices) {
+            if (!localMacs.has(rd.mac)) {
+              addMacDevice({
+                mac: rd.mac,
+                label: rd.name || rd.mac,
+                username: rd.iptv_username || '',
+                m3uUrl: rd.m3u_url || '',
+                status: rd.status || 'active',
+                notes: rd.notes || '',
+              });
+            } else {
+              // Update local device with remote status
+              const localDevice = macDevices.find((d) => d.mac === rd.mac);
+              if (localDevice && localDevice.status !== rd.status) {
+                updateMacDevice(localDevice.id, { status: rd.status });
+              }
+            }
+          }
+        }
+      } catch {
+        // Silently fail - local data still available
+      } finally {
+        setLoadingRemote(false);
+      }
+    })();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const filtered = macDevices.filter((d) =>
     d.mac.toLowerCase().includes(search.toLowerCase()) ||
@@ -439,13 +479,77 @@ function MacTab() {
     d.username.toLowerCase().includes(search.toLowerCase())
   );
 
-  const handleAdd = () => {
-    if (!newMac.mac || !newMac.label) return;
-    // Format MAC address
+  // Sync device to Supabase via API
+  const syncToApi = async (mac: string, m3uUrl: string, label: string, username: string, notes: string, deviceKey?: string) => {
+    const res = await fetch('/api/activate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        mac,
+        m3u_url: m3uUrl,
+        adminKey: '8kpro2026',
+        device_key: deviceKey || undefined,
+        name: label,
+        username,
+        notes,
+      }),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({ error: 'Network error' }));
+      throw new Error(data.error || 'Sync failed');
+    }
+    return res.json();
+  };
+
+  const deleteFromApi = async (mac: string) => {
+    await fetch(`/api/activate?mac=${encodeURIComponent(mac)}`, { method: 'DELETE' });
+  };
+
+  const handleAdd = async () => {
+    if (!newMac.mac || !newMac.label || !newMac.m3uUrl) return;
     const formattedMac = newMac.mac.replace(/[^a-fA-F0-9]/g, '').replace(/(.{2})/g, '$1:').slice(0, 17).toUpperCase();
-    addMacDevice({ ...newMac, mac: formattedMac });
-    setNewMac({ mac: '', label: '', username: '', notes: '', status: 'active' });
-    setShowAddForm(false);
+
+    setSyncing(true);
+    setSyncError('');
+    try {
+      // Sync to Supabase first
+      await syncToApi(formattedMac, newMac.m3uUrl, newMac.label, newMac.username, newMac.notes || '');
+      // Then save locally
+      addMacDevice({ ...newMac, mac: formattedMac });
+      setNewMac({ mac: '', label: '', username: '', m3uUrl: '', notes: '', status: 'active' });
+      setShowAddForm(false);
+      playSuccess();
+    } catch (err: any) {
+      setSyncError(err.message || 'Erreur de synchronisation');
+      playError();
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+  const handleDelete = async (device: MacDevice) => {
+    try {
+      await deleteFromApi(device.mac);
+    } catch {}
+    deleteMacDevice(device.id);
+    playClick();
+  };
+
+  const handleBlock = async (device: MacDevice) => {
+    try {
+      await deleteFromApi(device.mac);
+    } catch {}
+    updateMacDevice(device.id, { status: 'blocked' });
+    playError();
+  };
+
+  const handleActivate = async (device: MacDevice) => {
+    if (device.m3uUrl) {
+      try {
+        await syncToApi(device.mac, device.m3uUrl, device.label, device.username, device.notes || '');
+      } catch {}
+    }
+    updateMacDevice(device.id, { status: 'active' });
     playSuccess();
   };
 
@@ -491,13 +595,35 @@ function MacTab() {
                 className="w-full bg-surface-light/50 border border-surface-lighter/50 rounded-xl px-4 py-2.5 text-sm text-text-primary placeholder:text-text-secondary/30 focus:outline-none focus:border-accent/50 transition"
               />
             </div>
+            <div className="sm:col-span-2">
+              <label className="text-text-secondary text-[11px] uppercase tracking-wider mb-1 block">Lien M3U *</label>
+              <input
+                type="text"
+                value={newMac.m3uUrl}
+                onChange={(e) => {
+                  const url = e.target.value;
+                  setNewMac((prev) => {
+                    const next = { ...prev, m3uUrl: url };
+                    // Auto-extract username from M3U URL
+                    try {
+                      const parsed = new URL(url);
+                      const u = parsed.searchParams.get('username');
+                      if (u) next.username = u;
+                    } catch {}
+                    return next;
+                  });
+                }}
+                placeholder="http://server/get.php?username=xxx&password=yyy&type=m3u_plus"
+                className="w-full bg-surface-light/50 border border-surface-lighter/50 rounded-xl px-4 py-2.5 text-sm text-text-primary placeholder:text-text-secondary/30 focus:outline-none focus:border-accent/50 transition font-mono text-xs"
+              />
+            </div>
             <div>
               <label className="text-text-secondary text-[11px] uppercase tracking-wider mb-1 block">Username IPTV</label>
               <input
                 type="text"
                 value={newMac.username}
                 onChange={(e) => setNewMac({ ...newMac, username: e.target.value })}
-                placeholder="Username associé"
+                placeholder="Auto-extrait du M3U"
                 className="w-full bg-surface-light/50 border border-surface-lighter/50 rounded-xl px-4 py-2.5 text-sm text-text-primary placeholder:text-text-secondary/30 focus:outline-none focus:border-accent/50 transition"
               />
             </div>
@@ -524,9 +650,14 @@ function MacTab() {
               className="w-full bg-surface-light/50 border border-surface-lighter/50 rounded-xl px-4 py-2.5 text-sm text-text-primary placeholder:text-text-secondary/30 focus:outline-none focus:border-accent/50 transition"
             />
           </div>
+          {syncError && (
+            <div className="bg-red-500/10 border border-red-500/30 text-red-400 rounded-xl px-4 py-2.5 text-sm mb-4 flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0" /> {syncError}
+            </div>
+          )}
           <div className="flex gap-2">
-            <button onClick={handleAdd} className="flex items-center gap-1.5 bg-green-500/15 text-green-400 px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-green-500/25 transition">
-              <CheckCircle className="w-4 h-4" /> Ajouter
+            <button onClick={handleAdd} disabled={syncing} className="flex items-center gap-1.5 bg-green-500/15 text-green-400 px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-green-500/25 transition disabled:opacity-50">
+              <CheckCircle className="w-4 h-4" /> {syncing ? 'Sync...' : 'Ajouter'}
             </button>
             <button onClick={() => setShowAddForm(false)} className="px-4 py-2.5 bg-surface-lighter text-text-secondary rounded-xl text-sm hover:text-text-primary transition">
               Annuler
@@ -575,7 +706,7 @@ function MacTab() {
                 {/* Status toggles */}
                 {device.status !== 'active' && (
                   <button
-                    onClick={() => { playSuccess(); updateMacDevice(device.id, { status: 'active' }); }}
+                    onClick={() => handleActivate(device)}
                     className="p-2 text-green-400/60 hover:text-green-400 hover:bg-green-500/10 rounded-lg transition"
                     title="Activer"
                   >
@@ -584,7 +715,7 @@ function MacTab() {
                 )}
                 {device.status !== 'blocked' && (
                   <button
-                    onClick={() => { playError(); updateMacDevice(device.id, { status: 'blocked' }); }}
+                    onClick={() => handleBlock(device)}
                     className="p-2 text-red-400/60 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition"
                     title="Bloquer"
                   >
@@ -592,7 +723,7 @@ function MacTab() {
                   </button>
                 )}
                 <button
-                  onClick={() => { playClick(); deleteMacDevice(device.id); }}
+                  onClick={() => handleDelete(device)}
                   className="p-2 text-text-secondary/40 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition"
                   title="Supprimer"
                 >

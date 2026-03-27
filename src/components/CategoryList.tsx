@@ -19,55 +19,89 @@ export default function CategoryList({ categories, selected, onSelect, search, o
   const isTV = useIsTV();
 
   return (
-    <div className={`shrink-0 glass rounded-xl flex flex-col ${
-      isTV
-        ? 'w-full md:w-72 p-4 max-h-[calc(100vh-100px)] md:max-h-[calc(100vh-32px)]'
-        : 'w-full md:w-64 p-3 max-h-[calc(100vh-100px)] md:max-h-[calc(100vh-32px)]'
-    }`}>
-      {/* Header */}
-      <div className="flex items-center gap-2 mb-3">
-        <Layers className="w-4 h-4 text-accent" />
-        <span className="text-xs font-semibold text-text-primary uppercase tracking-wider">Categories</span>
-        <span className="ml-auto text-[10px] text-text-secondary bg-surface-lighter px-2 py-0.5 rounded-full">
-          {categories.length}
-        </span>
+    <>
+      {/* MOBILE: horizontal scrollable categories */}
+      <div className="md:hidden flex flex-col gap-2">
+        {/* Search bar */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary/50 w-4 h-4" />
+          <input
+            type="text"
+            placeholder={searchPlaceholder ?? 'Rechercher...'}
+            value={search}
+            onChange={(e) => onSearch(e.target.value)}
+            className="w-full bg-surface-light/50 border border-surface-lighter/50 rounded-xl pl-9 pr-3 py-2 text-sm text-text-primary placeholder:text-text-secondary/40 focus:outline-none focus:border-accent/50 transition"
+          />
+        </div>
+        {/* Horizontal category chips */}
+        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+          {loading ? (
+            <Loader2 className="w-5 h-5 text-accent animate-spin mx-auto" />
+          ) : (
+            categories.map((cat) => (
+              <button
+                key={cat.category_id}
+                onClick={() => { playNav(); onSelect(cat.category_id); }}
+                className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap ${
+                  selected === cat.category_id
+                    ? 'bg-accent text-black shadow-sm shadow-accent/20'
+                    : 'bg-surface-light/50 text-text-secondary hover:text-text-primary'
+                }`}
+              >
+                <ChannelLogo name={cat.category_name} size="sm" />
+                {cat.category_name}
+              </button>
+            ))
+          )}
+        </div>
       </div>
 
-      {/* Search */}
-      <div className="relative mb-3">
-        <Search className={`absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary/50 ${
-          isTV ? 'w-5 h-5' : 'w-4 h-4'
-        }`} />
-        <input
-          type="text"
-          placeholder={searchPlaceholder ?? 'Rechercher...'}
-          value={search}
-          onChange={(e) => onSearch(e.target.value)}
-          className={`w-full bg-surface-light/50 border border-surface-lighter/50 rounded-xl pr-3 text-text-primary placeholder:text-text-secondary/40 focus:outline-none focus:border-accent/50 focus:bg-surface-light transition ${
-            isTV ? 'pl-10 py-3 text-base' : 'pl-9 py-2.5 text-sm'
-          }`}
-        />
+      {/* DESKTOP: vertical sidebar */}
+      <div className={`hidden md:flex shrink-0 glass rounded-xl flex-col ${
+        isTV
+          ? 'w-72 p-4 max-h-[calc(100vh-32px)]'
+          : 'w-64 p-3 max-h-[calc(100vh-32px)]'
+      }`}>
+        <div className="flex items-center gap-2 mb-3">
+          <Layers className="w-4 h-4 text-accent" />
+          <span className="text-xs font-semibold text-text-primary uppercase tracking-wider">Categories</span>
+          <span className="ml-auto text-[10px] text-text-secondary bg-surface-lighter px-2 py-0.5 rounded-full">
+            {categories.length}
+          </span>
+        </div>
+        <div className="relative mb-3">
+          <Search className={`absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary/50 ${
+            isTV ? 'w-5 h-5' : 'w-4 h-4'
+          }`} />
+          <input
+            type="text"
+            placeholder={searchPlaceholder ?? 'Rechercher...'}
+            value={search}
+            onChange={(e) => onSearch(e.target.value)}
+            className={`w-full bg-surface-light/50 border border-surface-lighter/50 rounded-xl pr-3 text-text-primary placeholder:text-text-secondary/40 focus:outline-none focus:border-accent/50 focus:bg-surface-light transition ${
+              isTV ? 'pl-10 py-3 text-base' : 'pl-9 py-2.5 text-sm'
+            }`}
+          />
+        </div>
+        <div className={`overflow-y-auto flex-1 ${isTV ? 'space-y-1' : 'space-y-0.5'}`}>
+          {loading ? (
+            <div className="flex items-center justify-center py-6">
+              <Loader2 className="w-5 h-5 text-accent animate-spin" />
+            </div>
+          ) : (
+            categories.map((cat) => (
+              <CategoryButton
+                key={cat.category_id}
+                cat={cat}
+                isSelected={selected === cat.category_id}
+                onSelect={onSelect}
+                isTV={isTV}
+              />
+            ))
+          )}
+        </div>
       </div>
-
-      {/* Category list */}
-      <div className={`overflow-y-auto flex-1 ${isTV ? 'space-y-1' : 'space-y-0.5'}`}>
-        {loading ? (
-          <div className="flex items-center justify-center py-6">
-            <Loader2 className="w-5 h-5 text-accent animate-spin" />
-          </div>
-        ) : (
-          categories.map((cat) => (
-            <CategoryButton
-              key={cat.category_id}
-              cat={cat}
-              isSelected={selected === cat.category_id}
-              onSelect={onSelect}
-              isTV={isTV}
-            />
-          ))
-        )}
-      </div>
-    </div>
+    </>
   );
 }
 

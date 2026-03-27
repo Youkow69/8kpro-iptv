@@ -1,4 +1,5 @@
-import { NavLink } from 'react-router-dom';
+import { useRef } from 'react';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, Radio, Film, Clapperboard, Settings } from 'lucide-react';
 import { useIptvStore } from '../store/iptvStore';
 import { useTranslation } from '../i18n/useTranslation';
@@ -34,6 +35,16 @@ export default function Sidebar() {
   const isPlaying = !!playerTitle;
   const { t } = useTranslation();
   const isTV = useIsTV();
+  const navigate = useNavigate();
+  const longPressTimer = useRef<ReturnType<typeof setTimeout>>(null);
+
+  // Long press logo (3s) -> admin panel
+  const onLogoDown = () => {
+    longPressTimer.current = setTimeout(() => navigate('/admin'), 3000);
+  };
+  const onLogoUp = () => {
+    if (longPressTimer.current) clearTimeout(longPressTimer.current);
+  };
 
   const links = linkDefs.map((l) => ({ ...l, label: t(l.labelKey) }));
 
@@ -41,7 +52,11 @@ export default function Sidebar() {
   if (isTV) {
     return (
       <aside className="flex flex-col w-64 bg-surface/90 backdrop-blur-xl min-h-screen shrink-0 border-r border-surface-lighter/30">
-        <div className="flex items-center gap-3 px-5 py-6 border-b border-surface-lighter/30">
+        <div
+          className="flex items-center gap-3 px-5 py-6 border-b border-surface-lighter/30 cursor-pointer select-none"
+          onMouseDown={onLogoDown} onMouseUp={onLogoUp} onMouseLeave={onLogoUp}
+          onTouchStart={onLogoDown} onTouchEnd={onLogoUp} onTouchCancel={onLogoUp}
+        >
           <Logo size="md" />
           <div>
             <span className="font-bold text-xl text-accent tracking-tight">8K Player</span>
@@ -91,7 +106,11 @@ export default function Sidebar() {
     <>
       {/* Desktop sidebar */}
       <aside className="hidden md:flex flex-col w-20 lg:w-56 glass min-h-screen shrink-0 border-r border-white/5">
-        <div className="flex items-center gap-3 px-4 py-5 border-b border-white/5">
+        <div
+          className="flex items-center gap-3 px-4 py-5 border-b border-white/5 cursor-pointer select-none"
+          onMouseDown={onLogoDown} onMouseUp={onLogoUp} onMouseLeave={onLogoUp}
+          onTouchStart={onLogoDown} onTouchEnd={onLogoUp} onTouchCancel={onLogoUp}
+        >
           <Logo />
           <div className="hidden lg:block">
             <span className="font-bold text-lg text-accent tracking-tight">8K Player</span>
@@ -134,27 +153,22 @@ export default function Sidebar() {
         )}
       </aside>
 
-      {/* Mobile bottom bar - glassmorphism */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 glass z-50 border-t border-white/5">
+      {/* Mobile bottom bar - horizontal, compact */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 flex items-center justify-around bg-black/90 backdrop-blur-xl border-t border-white/10 px-1 py-1.5 safe-area-bottom nav-enter">
         {links.map((l) => (
           <NavLink
             key={l.to}
             to={l.to}
             className={({ isActive }) =>
-              `flex-1 flex flex-col items-center py-3 text-xs transition-all ${
-                isActive ? 'text-accent' : 'text-text-secondary'
+              `flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-lg transition-all ${
+                isActive ? 'text-accent' : 'text-text-secondary/60'
               }`
             }
           >
             {({ isActive }) => (
               <>
-                <div className="relative">
-                  <l.icon className="w-5 h-5 mb-1" />
-                  {isActive && (
-                    <span className="absolute -top-1 -right-1 w-1.5 h-1.5 bg-accent rounded-full" />
-                  )}
-                </div>
-                <span className={isActive ? 'font-medium' : ''}>{l.label}</span>
+                <l.icon className={`w-5 h-5 ${isActive ? 'drop-shadow-[0_0_6px_rgba(212,160,23,0.5)]' : ''}`} />
+                <span className={`text-[9px] ${isActive ? 'font-semibold' : ''}`}>{l.label}</span>
               </>
             )}
           </NavLink>
