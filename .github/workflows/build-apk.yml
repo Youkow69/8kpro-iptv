@@ -37,7 +37,7 @@ jobs:
 
       - name: Build APK
         working-directory: android
-        run: ./gradlew assembleDebug
+        run: chmod +x gradlew && ./gradlew assembleDebug
 
       - name: Rename APK
         run: mv android/app/build/outputs/apk/debug/app-debug.apk android/app/build/outputs/apk/debug/8kpro.apk
