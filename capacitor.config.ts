@@ -6,9 +6,8 @@ const config: CapacitorConfig = {
   webDir: 'dist',
   server: {
     androidScheme: 'http',
-    // Load from Vercel = OTA updates without reinstalling
-    url: 'https://8kproultimate.vercel.app',
     cleartext: true,
+    // No remote URL = code bundled in APK = direct IPTV connections work
   },
   android: {
     allowMixedContent: true,

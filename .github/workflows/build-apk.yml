@@ -54,8 +54,8 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v2.5.0
-          name: "v2.5.0 - Direct streaming fix"
+          tag_name: v2.6.0
+          name: "v2.6.0 - Bundled APK + Direct streaming"
           body: |
             - Fix: direct IPTV streaming without proxy (no more 15s cutoff)
             - Fix: HEVC/H.265 support via hardware decoder
