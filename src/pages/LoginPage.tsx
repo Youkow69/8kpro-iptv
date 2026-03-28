@@ -360,7 +360,7 @@ export default function LoginPage() {
         </form>
 
         <p className={`text-center text-text-secondary/30 mt-6 font-mono ${isTV ? 'text-sm' : 'text-[10px]'}`}>
-          8K Player v3.0.0
+          8K Player v3.2.0
         </p>
       </div>
     </div>

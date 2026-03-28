@@ -59,8 +59,8 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v3.2.0
-          name: "v3.2.0 - CapacitorHttp CORS bypass"
+          tag_name: v3.2.1
+          name: "v3.2.1 - Version display fix + CapacitorHttp"
           body: |
             ## 8K Pro IPTV v3.1.0
 

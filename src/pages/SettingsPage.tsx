@@ -15,7 +15,7 @@ export default function SettingsPage() {
   const [updateStatus, setUpdateStatus] = useState<'idle' | 'checking' | 'available' | 'latest'>('idle');
   const [latestVersion, setLatestVersion] = useState('');
   const [downloadUrl, setDownloadUrl] = useState('');
-  const APP_VERSION = 'v3.0.0';
+  const APP_VERSION = 'v3.2.0';
 
   const isNativeApp = !!(window as any)?.Capacitor?.isNativePlatform?.();
 
@@ -295,7 +295,7 @@ export default function SettingsPage() {
           </div>
           <div className="flex items-center justify-between py-2 border-t border-white/5">
             <span className="text-text-secondary text-xs">Version</span>
-            <span className="text-accent text-xs font-mono">v3.0.0</span>
+            <span className="text-accent text-xs font-mono">{APP_VERSION}</span>
           </div>
           <div className="flex items-center justify-between py-2 border-t border-white/5">
             <span className="text-text-secondary text-xs">Build</span>
