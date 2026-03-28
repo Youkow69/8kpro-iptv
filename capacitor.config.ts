@@ -7,10 +7,14 @@ const config: CapacitorConfig = {
   server: {
     androidScheme: 'http',
     cleartext: true,
-    // No remote URL = code bundled in APK = direct IPTV connections work
   },
   android: {
     allowMixedContent: true,
+  },
+  plugins: {
+    CapacitorHttp: {
+      enabled: true, // Route ALL fetch/XHR through native layer = no CORS
+    },
   },
 };
 
