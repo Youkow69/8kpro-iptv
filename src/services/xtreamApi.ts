@@ -11,16 +11,25 @@ import type {
 import { getSecureHeaders } from './security';
 
 function isNative(): boolean {
+  // Check Capacitor bridge
   const cap = (window as any)?.Capacitor;
-  if (!cap) return false;
-  if (typeof cap.isNativePlatform === 'function') return cap.isNativePlatform();
-  return !!cap.platform && cap.platform !== 'web';
+  if (cap) {
+    if (typeof cap.isNativePlatform === 'function' && cap.isNativePlatform()) return true;
+    if (cap.platform && cap.platform !== 'web') return true;
+  }
+  // Fallback: detect if running from local Capacitor server (not Vercel)
+  if (window.location.protocol === 'capacitor:' || window.location.protocol === 'ionic:') return true;
+  if (window.location.hostname === 'localhost' && window.location.port === '') return true;
+  // Check for Capacitor in user agent or URL
+  if (navigator.userAgent.includes('CapacitorApp')) return true;
+  return false;
 }
 
 const VERCEL_PROXY = 'https://8kproultimate.vercel.app/api/proxy';
-const PROXY = isNative()
-  ? VERCEL_PROXY
-  : (window.location.origin + '/api/proxy');
+
+function getProxy(): string {
+  return isNative() ? VERCEL_PROXY : (window.location.origin + '/api/proxy');
+}
 
 // API calls: ALWAYS through proxy (needed for CORS + Cloudflare bypass)
 function proxyUrl(creds: XtreamCredentials, params?: Record<string, string>) {
@@ -32,7 +41,7 @@ function proxyUrl(creds: XtreamCredentials, params?: Record<string, string>) {
     password: creds.password,
     ...params,
   });
-  return `${PROXY}?${sp.toString()}`;
+  return `${getProxy()}?${sp.toString()}`;
 }
 
 const secureAxios = axios.create();
@@ -108,7 +117,7 @@ export async function getSeriesInfo(creds: XtreamCredentials, seriesId: number):
 }
 
 export function proxyStreamUrl(rawUrl: string): string {
-  return `${PROXY}?url=${encodeURIComponent(rawUrl)}`;
+  return `${getProxy()}?url=${encodeURIComponent(rawUrl)}`;
 }
 
 export function getOriginalUrlFromProxy(proxyUrl: string): string | null {

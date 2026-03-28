@@ -12,11 +12,16 @@ import { Logo } from '../components/Sidebar';
 import { playClick, playSuccess, playError } from '../services/sounds';
 
 // API base: use Vercel URL on native (APK has no local API server)
-const API_BASE = (() => {
+function getApiBase(): string {
   const cap = (window as any)?.Capacitor;
-  const isNative = cap && (typeof cap.isNativePlatform === 'function' ? cap.isNativePlatform() : !!cap.platform && cap.platform !== 'web');
-  return isNative ? 'https://8kproultimate.vercel.app' : '';
-})();
+  if (cap) {
+    if (typeof cap.isNativePlatform === 'function' && cap.isNativePlatform()) return 'https://8kproultimate.vercel.app';
+    if (cap.platform && cap.platform !== 'web') return 'https://8kproultimate.vercel.app';
+  }
+  if (window.location.protocol === 'capacitor:' || window.location.protocol === 'ionic:') return 'https://8kproultimate.vercel.app';
+  if (!window.location.hostname.includes('vercel') && !window.location.hostname.includes('localhost')) return 'https://8kproultimate.vercel.app';
+  return '';
+}
 
 type AdminTab = 'dashboard' | 'trials' | 'mac' | 'config' | 'logs' | 'settings';
 
@@ -463,7 +468,7 @@ function MacTab() {
   // Load devices from Supabase
   const loadFromSupabase = useCallback(async () => {
       try {
-        const res = await fetch(`${API_BASE}/api/activate?list=all&adminKey=8kpro2026`);
+        const res = await fetch(`${getApiBase()}/api/activate?list=all&adminKey=8kpro2026`);
         if (!res.ok) throw new Error('Failed to load');
         const remoteDevices = await res.json();
         if (Array.isArray(remoteDevices)) {
@@ -509,7 +514,7 @@ function MacTab() {
 
   // Sync device to Supabase via API
   const syncToApi = async (mac: string, m3uUrl: string, label: string, username: string, notes: string, deviceKey?: string) => {
-    const res = await fetch(`${API_BASE}/api/activate`, {
+    const res = await fetch(`${getApiBase()}/api/activate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -530,7 +535,7 @@ function MacTab() {
   };
 
   const deleteFromApi = async (mac: string) => {
-    await fetch(`${API_BASE}/api/activate?mac=${encodeURIComponent(mac)}`, { method: 'DELETE' });
+    await fetch(`${getApiBase()}/api/activate?mac=${encodeURIComponent(mac)}`, { method: 'DELETE' });
   };
 
   const handleAdd = async () => {

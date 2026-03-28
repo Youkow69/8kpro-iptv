@@ -38,30 +38,40 @@ jobs:
       - name: Sync Capacitor
         run: npx cap sync android
 
-      - name: Build APK
+      - name: Decode keystore
+        run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > android/8kpro.keystore
+
+      - name: Build Release APK
         working-directory: android
-        run: chmod +x gradlew && ./gradlew assembleDebug
+        run: chmod +x gradlew && ./gradlew assembleRelease
 
       - name: Rename APK
-        run: mv android/app/build/outputs/apk/debug/app-debug.apk android/app/build/outputs/apk/debug/8kpro.apk
+        run: |
+          mkdir -p output
+          cp android/app/build/outputs/apk/release/app-release.apk output/8kpro.apk
 
-      - name: Upload APK
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: 8kpro-apk
-          path: android/app/build/outputs/apk/debug/8kpro.apk
+          path: output/8kpro.apk
 
-      - name: Create Release
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v3.0.0
-          name: "v3.0.0 - Complete fix"
+          tag_name: v3.1.0
+          name: "v3.1.0 - Native streaming fix"
           body: |
-            - Fix: direct IPTV streaming without proxy (no more 15s cutoff)
-            - Fix: HEVC/H.265 support via hardware decoder
-            - Fix: mixed content allowed for HTTP streams
-            - HLS fallback for incompatible codecs
-            - Auto-reconnect watchdog
-          files: android/app/build/outputs/apk/debug/8kpro.apk
+            ## 8K Pro IPTV v3.1.0
+
+            - Fix: native direct streaming (no proxy, no 15s cutoff)
+            - Fix: Capacitor detection robuste (isNative)
+            - Fix: API calls always route to Vercel
+            - Fix: video.src direct for HEVC/H.265 hardware decoding
+            - Fix: auto-reconnect watchdog for long sessions
+            - Fix: pull-to-refresh on admin + player
+            - Fix: admin sync across devices via Supabase
+            - Fix: update button downloads latest APK
+          files: output/8kpro.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

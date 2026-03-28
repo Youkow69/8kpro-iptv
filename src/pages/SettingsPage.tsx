@@ -15,7 +15,7 @@ export default function SettingsPage() {
   const [updateStatus, setUpdateStatus] = useState<'idle' | 'checking' | 'available' | 'latest'>('idle');
   const [latestVersion, setLatestVersion] = useState('');
   const [downloadUrl, setDownloadUrl] = useState('');
-  const APP_VERSION = 'v2.9.0';
+  const APP_VERSION = 'v3.0.0';
 
   const isNativeApp = !!(window as any)?.Capacitor?.isNativePlatform?.();
 
@@ -42,12 +42,14 @@ export default function SettingsPage() {
   };
 
   const doUpdate = () => {
+    const url = downloadUrl || 'https://github.com/Youkow69/8kpro-iptv/releases/latest/download/8kpro.apk';
     if (isNativeApp) {
-      // Native APK: download new APK from GitHub
-      const url = downloadUrl || 'https://github.com/Youkow69/8kpro-iptv/releases/latest/download/8kpro.apk';
+      // Native APK: download new APK in system browser
       window.open(url, '_system');
     } else {
-      // Web: clear SW + cache and reload
+      // Web: download APK + clear cache
+      window.open(url, '_blank');
+      // Also clear SW so web version is up to date
       (async () => {
         if ('serviceWorker' in navigator) {
           const regs = await navigator.serviceWorker.getRegistrations();
@@ -55,7 +57,6 @@ export default function SettingsPage() {
           const keys = await caches.keys();
           await Promise.all(keys.map((k) => caches.delete(k)));
         }
-        window.location.href = window.location.origin + '/?_=' + Date.now();
       })();
     }
   };
@@ -294,7 +295,7 @@ export default function SettingsPage() {
           </div>
           <div className="flex items-center justify-between py-2 border-t border-white/5">
             <span className="text-text-secondary text-xs">Version</span>
-            <span className="text-accent text-xs font-mono">v2.5.0</span>
+            <span className="text-accent text-xs font-mono">v3.0.0</span>
           </div>
           <div className="flex items-center justify-between py-2 border-t border-white/5">
             <span className="text-text-secondary text-xs">Build</span>
