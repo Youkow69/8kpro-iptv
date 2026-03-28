@@ -13,7 +13,7 @@ const config: CapacitorConfig = {
   },
   plugins: {
     CapacitorHttp: {
-      enabled: true, // Route ALL fetch/XHR through native layer = no CORS
+      enabled: false, // Disabled - causes issues with streaming
     },
   },
 };
