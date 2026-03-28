@@ -129,15 +129,9 @@ export function getOriginalUrlFromProxy(proxyUrl: string): string | null {
   }
 }
 
-// Stream URLs: DIRECT on native (fast, no proxy overhead), PROXY on web (CORS needed)
+// Stream URLs: ALL platforms use proxy (CORS + mixed content)
 export function buildLiveStreamUrl(creds: XtreamCredentials, streamId: number): string {
   const server = creds.server.replace(/\/+$/, '');
-  if (isNative()) {
-    // Native Capacitor: direct HLS (same-origin in WebView)
-    return `${server}/live/${creds.username}/${creds.password}/${streamId}.m3u8`;
-  }
-  // All web (mobile + desktop): .ts through proxy
-  // Proxy converts HTTP->HTTPS (avoids mixed content block)
   const raw = `${server}/live/${creds.username}/${creds.password}/${streamId}.ts`;
   return proxyStreamUrl(raw);
 }
@@ -145,13 +139,11 @@ export function buildLiveStreamUrl(creds: XtreamCredentials, streamId: number): 
 export function buildVodStreamUrl(creds: XtreamCredentials, streamId: number, extension: string): string {
   const server = creds.server.replace(/\/+$/, '');
   const raw = `${server}/movie/${creds.username}/${creds.password}/${streamId}.${extension}`;
-  if (isNative()) return raw;
   return proxyStreamUrl(raw);
 }
 
 export function buildSeriesStreamUrl(creds: XtreamCredentials, episodeId: string, extension: string): string {
   const server = creds.server.replace(/\/+$/, '');
   const raw = `${server}/series/${creds.username}/${creds.password}/${episodeId}.${extension}`;
-  if (isNative()) return raw;
   return proxyStreamUrl(raw);
 }

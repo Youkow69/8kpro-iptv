@@ -59,8 +59,8 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v3.3.0
-          name: "v3.3.0 - Direct stream with proxy fallback"
+          tag_name: v3.4.0
+          name: "v3.4.0 - Unified proxy streaming"
           body: |
             ## 8K Pro IPTV v3.1.0
 

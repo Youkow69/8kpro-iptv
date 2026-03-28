@@ -105,47 +105,7 @@ export default function Player() {
   const loadStream = useCallback((url: string, video: HTMLVideoElement) => {
     const isHls = url.includes('.m3u8');
     const isMpegTs = url.includes('.ts') && !url.includes('.m3u8');
-    const isProxied = url.includes('/api/proxy') || url.includes('8kproultimate.vercel.app');
-
-    // Native: try video.src direct first (bypasses CORS for <video> element)
-    if (!isProxied) {
-      let directFailed = false;
-      video.src = url;
-      const directTimeout = setTimeout(() => {
-        if (!directFailed) {
-          directFailed = true;
-          video.removeAttribute('src');
-          video.load();
-          // Fallback: use proxy version
-          const proxyFallback = `https://8kproultimate.vercel.app/api/proxy?url=${encodeURIComponent(url)}`;
-          loadStream(proxyFallback, video);
-        }
-      }, 8000);
-
-      video.addEventListener('canplay', () => {
-        if (!directFailed) {
-          clearTimeout(directTimeout);
-          setLoading(false);
-          retryCountRef.current = 0;
-          video.play().catch(() => {});
-        }
-      }, { once: true });
-
-      video.addEventListener('error', () => {
-        if (!directFailed) {
-          directFailed = true;
-          clearTimeout(directTimeout);
-          video.removeAttribute('src');
-          video.load();
-          const proxyFallback = `https://8kproultimate.vercel.app/api/proxy?url=${encodeURIComponent(url)}`;
-          loadStream(proxyFallback, video);
-        }
-      }, { once: true });
-
-      video.play().catch(() => {});
-      return;
-    }
-
+    // All streams go through proxy (same behavior on web + APK)
     if (isHls && Hls.isSupported()) {
       // Proxy already rewrites m3u8 segment URLs - no xhrSetup needed
       const hls = new Hls({
