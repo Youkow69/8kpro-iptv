@@ -6,7 +6,7 @@ import { useTranslation } from '../i18n/useTranslation';
 import { useIsTV } from '../hooks/useIsTV';
 import { toggleSounds, getSoundsEnabled, playLogout, playClick } from '../services/sounds';
 
-const APP_VERSION = 'v3.4.0';
+const APP_VERSION = 'v3.5.0';
 
 export default function SettingsPage() {
   const { userInfo, credentials, logout, savedAccounts, switchAccount, deleteAccount } = useAuthStore();

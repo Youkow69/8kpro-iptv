@@ -59,19 +59,18 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v3.4.0
-          name: "v3.4.0 - Unified proxy streaming"
+          tag_name: v3.5.0
+          name: "v3.5.0 - Dragon Ball Theme"
           body: |
-            ## 8K Pro IPTV v3.1.0
+            ## 8K Pro IPTV v3.5.0
 
-            - Fix: native direct streaming (no proxy, no 15s cutoff)
-            - Fix: Capacitor detection robuste (isNative)
-            - Fix: API calls always route to Vercel
-            - Fix: video.src direct for HEVC/H.265 hardware decoding
-            - Fix: auto-reconnect watchdog for long sessions
-            - Fix: pull-to-refresh on admin + player
-            - Fix: admin sync across devices via Supabase
-            - Fix: update button downloads latest APK
+            - Dragon Ball aura effects on all logos, categories, navigation, dashboard, player
+            - Gradient text (white→gold→orange) on channel names, titles, headings
+            - Letter abbreviations replace channel icon images (no white backgrounds)
+            - Loading spinner replaced with Dragon Ball sphere
+            - Dashboard progressive loading + store caching for instant reload
+            - ScrollToTop, SkeletonGrid, useDebounce utilities
+            - Multi-language improvements
           files: output/8kpro.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
