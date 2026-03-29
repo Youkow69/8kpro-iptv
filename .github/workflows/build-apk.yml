@@ -59,18 +59,17 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v3.5.0
-          name: "v3.5.0 - Dragon Ball Theme"
+          tag_name: v3.5.1
+          name: "v3.5.1 - Red Dragon Balls + UI Polish"
           body: |
-            ## 8K Pro IPTV v3.5.0
+            ## 8K Pro IPTV v3.5.1
 
-            - Dragon Ball aura effects on all logos, categories, navigation, dashboard, player
-            - Gradient text (white→gold→orange) on channel names, titles, headings
-            - Letter abbreviations replace channel icon images (no white backgrounds)
-            - Loading spinner replaced with Dragon Ball sphere
-            - Dashboard progressive loading + store caching for instant reload
-            - ScrollToTop, SkeletonGrid, useDebounce utilities
-            - Multi-language improvements
+            - Red Dragon Ball theme (was orange/gold)
+            - Uniform xs ball size across all pages
+            - Removed yellow highlight bar on last watched channel
+            - Smaller category balls with text inside
+            - xs balls hide aura rings for cleaner nav bars
+            - All previous v3.5.0 features included
           files: output/8kpro.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

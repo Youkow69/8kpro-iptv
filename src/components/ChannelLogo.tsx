@@ -158,7 +158,7 @@ export function getChannelGlowColor(name: string): string {
 
 interface ChannelLogoProps {
   name: string;
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'xs' | 'sm' | 'md' | 'lg';
   className?: string;
 }
 
@@ -184,7 +184,10 @@ export default function ChannelLogo({ name, size = 'md', className = '' }: Chann
 
     // Font size based on abbreviation length
     let fontSize: string;
-    if (abbr.length <= 1) fontSize = 'text-lg';
+    if (size === 'xs') {
+      if (abbr.length <= 2) fontSize = 'text-[8px]';
+      else fontSize = 'text-[6px]';
+    } else if (abbr.length <= 1) fontSize = 'text-lg';
     else if (abbr.length <= 2) fontSize = 'text-sm';
     else if (abbr.length <= 3) fontSize = 'text-xs';
     else fontSize = 'text-[9px]';
@@ -195,9 +198,10 @@ export default function ChannelLogo({ name, size = 'md', className = '' }: Chann
       textColor,
       fontSize,
     };
-  }, [name]);
+  }, [name, size]);
 
   const sizeClasses = {
+    xs: 'w-6 h-6 rounded',
     sm: 'w-8 h-8 rounded-md',
     md: 'w-12 h-12 rounded-lg',
     lg: 'w-16 h-16 rounded-xl',

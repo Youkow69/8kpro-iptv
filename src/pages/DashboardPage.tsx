@@ -185,7 +185,7 @@ function LiveChannelCard({ stream, epg, onClick, isLast }: {
     >
       <div className="flex items-center gap-2.5 mb-2.5">
         <div className="relative w-10 h-10 shrink-0">
-          <DragonBallAura streamId={stream.stream_id} size="sm" />
+          <DragonBallAura streamId={stream.stream_id} size="xs" />
           <div className="relative z-[1] w-10 h-10 rounded-lg flex items-center justify-center overflow-hidden">
             <ChannelLogo name={stream.name} size="sm" />
           </div>
@@ -342,7 +342,7 @@ export default function DashboardPage() {
       <div className="flex-1 flex items-center justify-center">
         <div className="flex flex-col items-center gap-5 animate-fade-in">
           <div className="relative w-16 h-16 flex items-center justify-center">
-            <DragonBallAura streamId={4} size="lg" />
+            <DragonBallAura streamId={4} size="xs" />
           </div>
           <div className="text-center">
             <p className="font-medium text-sm channel-name-gradient">{t('dash.loading')}</p>
@@ -381,7 +381,7 @@ export default function DashboardPage() {
               ].map((stat) => (
                 <div key={stat.label} className="flex items-center gap-2.5 group">
                   <div className="relative w-9 h-9">
-                    <DragonBallAura streamId={stat.dbId} size="sm" />
+                    <DragonBallAura streamId={stat.dbId} size="xs" />
                     <div className={`relative z-[1] w-9 h-9 rounded-xl flex items-center justify-center`}>
                       <stat.icon className={`w-4 h-4 text-${stat.color}-400`} />
                     </div>
@@ -404,7 +404,7 @@ export default function DashboardPage() {
                   className="mt-6 flex items-center gap-3 bg-white/[0.04] hover:bg-white/[0.07] border border-white/[0.06] hover:border-accent/20 rounded-xl px-4 py-3 transition-all group w-full"
                 >
                   <div className="relative w-10 h-10 shrink-0">
-                    <DragonBallAura streamId={lastCh.stream_id} size="sm" />
+                    <DragonBallAura streamId={lastCh.stream_id} size="xs" />
                     <div className="relative z-[1] w-10 h-10 rounded-xl flex items-center justify-center">
                       <Play className="w-5 h-5 text-accent fill-accent" />
                     </div>

@@ -166,7 +166,7 @@ export default function LivePage() {
                 >
                   <div className="relative w-14 h-14">
                     {/* Dragon Ball aura */}
-                    <DragonBallAura streamId={stream.stream_id} size="md" />
+                    <DragonBallAura streamId={stream.stream_id} size="xs" />
                     <div className="relative w-14 h-14 rounded-xl overflow-hidden flex items-center justify-center shrink-0"
                       style={{ zIndex: 1 }}
                     >

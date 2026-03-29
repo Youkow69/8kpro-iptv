@@ -1,5 +1,5 @@
 import { useRef, memo } from 'react';
-import { Star, Radio } from 'lucide-react';
+import { Star } from 'lucide-react';
 import ChannelLogo from './ChannelLogo';
 import DragonBallAura from './DragonBallAura';
 import { useIptvStore } from '../store/iptvStore';
@@ -29,10 +29,6 @@ export default memo(function ChannelCard({ stream, onClick, isLast, index }: Pro
       role="button"
       className={`w-full flex items-center text-left group relative channel-card cursor-pointer ${
         isTV ? 'gap-4 px-5 py-4' : 'gap-3 px-4 py-3'
-      } ${
-        isLast
-          ? 'bg-accent/[0.05] border-l-[3px] border-l-accent'
-          : ''
       }`}
       onFocus={(e) => {
         if (isTV) e.currentTarget.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
@@ -45,7 +41,7 @@ export default memo(function ChannelCard({ stream, onClick, isLast, index }: Pro
 
       <div className={`relative shrink-0 ${isTV ? 'w-12 h-12' : 'w-9 h-9'}`}>
         {/* Dragon Ball aura behind logo */}
-        <DragonBallAura streamId={stream.stream_id} size={isTV ? 'md' : 'sm'} />
+        <DragonBallAura streamId={stream.stream_id} size="xs" />
         <div className={`relative rounded-lg flex items-center justify-center overflow-hidden ${isTV ? 'w-12 h-12' : 'w-9 h-9'}`}
           style={{ zIndex: 1 }}
         >
@@ -58,12 +54,6 @@ export default memo(function ChannelCard({ stream, onClick, isLast, index }: Pro
         <p className={`font-medium truncate channel-name-gradient ${isTV ? 'text-base' : 'text-sm'}`}>
           {stream.name}
         </p>
-        {isLast && (
-          <div className="flex items-center gap-1 mt-0.5">
-            <Radio className="w-3 h-3 text-accent/70" />
-            <span className="text-accent/70 text-[10px] font-medium">{t('live.lastChannel')}</span>
-          </div>
-        )}
       </div>
 
       <button

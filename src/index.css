@@ -456,7 +456,7 @@ video {
 
 /* Gradient text for channel names */
 .channel-name-gradient {
-  background: linear-gradient(90deg, #ffffff 0%, #ffe082 50%, #ff6d00 100%);
+  background: linear-gradient(90deg, #ffffff 0%, #ff8080 50%, #cc0000 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;

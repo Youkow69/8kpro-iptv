@@ -56,10 +56,10 @@ export default function CategoryList({ categories, selected, onSelect, search, o
                     : 'bg-surface-light/50 text-text-secondary hover:text-text-primary'
                 }`}
               >
-                <div className="relative w-8 h-8 shrink-0">
-                  <DragonBallAura streamId={catIdToNum(cat.category_id)} size="sm" />
+                <div className="relative w-7 h-7 shrink-0">
+                  <DragonBallAura streamId={catIdToNum(cat.category_id)} size="xs" />
                   <div className="relative z-[1]">
-                    <ChannelLogo name={cat.category_name} size="sm" />
+                    <ChannelLogo name={cat.category_name} size="xs" />
                   </div>
                 </div>
                 {cat.category_name}
@@ -147,10 +147,10 @@ function CategoryButton({ cat, isSelected, onSelect, isTV }: {
           : 'text-text-secondary hover:bg-surface-light/50 hover:text-text-primary'
       }`}
     >
-      <div className={`relative shrink-0 ${isTV ? 'w-10 h-10' : 'w-8 h-8'}`}>
-        <DragonBallAura streamId={catIdToNum(cat.category_id)} size="sm" />
+      <div className={`relative shrink-0 ${isTV ? 'w-8 h-8' : 'w-7 h-7'}`}>
+        <DragonBallAura streamId={catIdToNum(cat.category_id)} size="xs" />
         <div className="relative z-[1]">
-          <ChannelLogo name={cat.category_name} size="sm" />
+          <ChannelLogo name={cat.category_name} size="xs" />
         </div>
       </div>
       <span className="truncate flex-1">{cat.category_name}</span>

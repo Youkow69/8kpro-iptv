@@ -9,7 +9,7 @@ import { useIsTV } from '../hooks/useIsTV';
 import { playClick, playWelcome, playError, playSuccess } from '../services/sounds';
 
 const DEFAULT_SERVER = 'http://smarter8k.ru';
-const APP_VERSION = 'v3.5.0';
+const APP_VERSION = 'v3.5.1';
 
 function getApiBase(): string {
   const cap = (window as any)?.Capacitor;

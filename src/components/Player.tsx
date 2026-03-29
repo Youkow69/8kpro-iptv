@@ -894,7 +894,7 @@ export default function Player() {
                     {i + 1}
                   </span>
                   <div className={`relative shrink-0 ${isTV ? 'w-10 h-10' : 'w-8 h-8'}`}>
-                    <DragonBallAura streamId={stream.stream_id} size="sm" />
+                    <DragonBallAura streamId={stream.stream_id} size="xs" />
                     <div className={`relative z-[1] rounded-md flex items-center justify-center overflow-hidden ${
                       isTV ? 'w-10 h-10' : 'w-8 h-8'
                     }`}>

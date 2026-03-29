@@ -54,29 +54,33 @@ export default function DragonBallAura({ streamId, size = 'md' }: Props) {
 
   return (
     <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-      {/* Outer aura glow */}
-      <div
-        className="absolute db-aura-outer"
-        style={{
-          width: ballSize * 1.8,
-          height: ballSize * 1.8,
-          borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(255,180,30,0.4) 0%, rgba(255,120,0,0.15) 40%, rgba(255,80,0,0.05) 65%, transparent 80%)',
-          animationDelay: `${delay}s`,
-        }}
-      />
-      {/* Inner aura ring */}
-      <div
-        className="absolute db-aura-inner"
-        style={{
-          width: ballSize * 1.3,
-          height: ballSize * 1.3,
-          borderRadius: '50%',
-          border: '1px solid rgba(255,180,30,0.2)',
-          boxShadow: '0 0 12px rgba(255,160,20,0.3), inset 0 0 8px rgba(255,200,50,0.1)',
-          animationDelay: `${delay + 0.3}s`,
-        }}
-      />
+      {/* Outer aura glow — hidden on xs */}
+      {size !== 'xs' && (
+        <div
+          className="absolute db-aura-outer"
+          style={{
+            width: ballSize * 1.8,
+            height: ballSize * 1.8,
+            borderRadius: '50%',
+            background: 'radial-gradient(circle, rgba(255,40,40,0.4) 0%, rgba(200,20,0,0.15) 40%, rgba(150,0,0,0.05) 65%, transparent 80%)',
+            animationDelay: `${delay}s`,
+          }}
+        />
+      )}
+      {/* Inner aura ring — hidden on xs */}
+      {size !== 'xs' && (
+        <div
+          className="absolute db-aura-inner"
+          style={{
+            width: ballSize * 1.3,
+            height: ballSize * 1.3,
+            borderRadius: '50%',
+            border: '1px solid rgba(255,50,50,0.2)',
+            boxShadow: '0 0 12px rgba(255,40,40,0.3), inset 0 0 8px rgba(255,80,80,0.1)',
+            animationDelay: `${delay + 0.3}s`,
+          }}
+        />
+      )}
       {/* Dragon Ball sphere */}
       <div
         className="absolute db-ball"
@@ -84,8 +88,8 @@ export default function DragonBallAura({ streamId, size = 'md' }: Props) {
           width: ballSize,
           height: ballSize,
           borderRadius: '50%',
-          background: 'radial-gradient(circle at 35% 30%, #ffe566 0%, #ffcc33 20%, #ff9900 50%, #e07000 80%, #993800 100%)',
-          boxShadow: '0 0 20px rgba(255,160,20,0.5), 0 0 40px rgba(255,120,0,0.2), inset 0 -4px 8px rgba(0,0,0,0.2), inset 0 2px 4px rgba(255,255,255,0.3)',
+          background: 'radial-gradient(circle at 35% 30%, #ff6666 0%, #e03030 20%, #cc1010 50%, #990000 80%, #660000 100%)',
+          boxShadow: '0 0 20px rgba(255,40,40,0.5), 0 0 40px rgba(200,0,0,0.2), inset 0 -4px 8px rgba(0,0,0,0.3), inset 0 2px 4px rgba(255,200,200,0.3)',
           animationDelay: `${delay}s`,
         }}
       >
@@ -98,7 +102,7 @@ export default function DragonBallAura({ streamId, size = 'md' }: Props) {
             width: '40%',
             height: '35%',
             borderRadius: '50%',
-            background: 'radial-gradient(circle at 50% 40%, rgba(255,255,255,0.7) 0%, rgba(255,255,240,0.3) 50%, transparent 100%)',
+            background: 'radial-gradient(circle at 50% 40%, rgba(255,255,255,0.6) 0%, rgba(255,200,200,0.25) 50%, transparent 100%)',
           }}
         />
         {/* Secondary highlight */}
@@ -123,13 +127,13 @@ export default function DragonBallAura({ streamId, size = 'md' }: Props) {
               top: pos.y - starSize,
               width: starSize * 2,
               height: starSize * 2,
-              filter: 'drop-shadow(0 0 1px rgba(200,0,0,0.5))',
+              filter: 'drop-shadow(0 0 1px rgba(200,180,0,0.5))',
             }}
             viewBox="0 0 10 10"
           >
             <polygon
               points="5,0.5 6.2,3.8 9.8,3.8 6.8,6 7.8,9.5 5,7.2 2.2,9.5 3.2,6 0.2,3.8 3.8,3.8"
-              fill="#cc1100"
+              fill="#ffcc00"
             />
           </svg>
         ))}
@@ -137,7 +141,7 @@ export default function DragonBallAura({ streamId, size = 'md' }: Props) {
         <div
           className="absolute inset-0 rounded-full"
           style={{
-            background: 'radial-gradient(circle at 70% 75%, rgba(255,200,100,0.25) 0%, transparent 50%)',
+            background: 'radial-gradient(circle at 70% 75%, rgba(255,150,150,0.25) 0%, transparent 50%)',
           }}
         />
       </div>
