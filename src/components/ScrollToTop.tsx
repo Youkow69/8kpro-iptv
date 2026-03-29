@@ -21,7 +21,7 @@ export default function ScrollToTop({ scrollRef }: Props) {
   return (
     <button
       onClick={() => scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' })}
-      className="fixed bottom-20 right-4 z-50 bg-surface-light/80 text-white/70 p-2.5 rounded-full shadow-lg shadow-black/25 backdrop-blur-sm transition-all hover:bg-surface-lighter hover:text-white hover:scale-110 active:scale-95"
+      className="fixed bottom-20 right-4 z-50 bg-transparent text-white/50 p-2.5 rounded-full transition-all hover:text-white hover:scale-110 active:scale-95"
       aria-label="Scroll to top"
     >
       <ChevronUp className="w-5 h-5" />
