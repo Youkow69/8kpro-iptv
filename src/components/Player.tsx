@@ -12,6 +12,8 @@ import { buildLiveStreamUrl, getOriginalUrlFromProxy, proxyStreamUrl } from '../
 import { useTranslation } from '../i18n/useTranslation';
 import { useIsTV } from '../hooks/useIsTV';
 import { playChannelUp, playChannelDown, playClick, playFavoriteAdd, playFavoriteRemove } from '../services/sounds';
+import DragonBallAura from './DragonBallAura';
+import ChannelLogo from './ChannelLogo';
 
 export default function Player() {
   const {
@@ -40,9 +42,22 @@ export default function Player() {
   const [muted, setMuted] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showControls, setShowControls] = useState(true);
-  const [volume, setVolume] = useState(1);
+  const [volume, setVolume] = useState(() => {
+    const saved = localStorage.getItem('8k_player_volume');
+    return saved ? parseFloat(saved) : 1;
+  });
 
   const controlsTimer = useRef<ReturnType<typeof setTimeout>>(null);
+
+  // Persist volume changes and sync to video element
+  useEffect(() => {
+    localStorage.setItem('8k_player_volume', String(volume));
+    if (videoRef.current) videoRef.current.volume = volume;
+  }, [volume]);
+
+  useEffect(() => {
+    if (videoRef.current) videoRef.current.muted = muted;
+  }, [muted]);
 
   const iconSize = isTV ? 'w-7 h-7' : 'w-5 h-5';
   const btnPad = isTV ? 'p-3' : 'p-2';
@@ -492,7 +507,11 @@ export default function Player() {
 
     // Small delay lets browser release old resources before loading new stream
     const timer = setTimeout(() => {
-      if (videoRef.current) loadStream(playerUrl, videoRef.current);
+      if (videoRef.current) {
+        videoRef.current.volume = volume;
+        videoRef.current.muted = muted;
+        loadStream(playerUrl, videoRef.current);
+      }
     }, 150);
 
     // Pre-cache disabled - saves bandwidth and speeds up current stream loading
@@ -558,7 +577,10 @@ export default function Player() {
 
   // Channel number display
   const currentIdx = liveStreams.findIndex((s) => s.stream_id === playerStreamId);
+  const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || 'ontouchstart' in window;
+
   const handleTouchStart = (e: React.TouchEvent) => {
+    resetControlsTimer();
     touchStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY, time: Date.now() };
   };
   const handleTouchEnd = (e: React.TouchEvent) => {
@@ -616,6 +638,7 @@ export default function Player() {
                 onClick={() => navigateChannel(-1)}
                 className={`${btnPad} text-white/70 hover:text-white hover:bg-white/10 focus-visible:text-white focus-visible:bg-white/10 rounded-lg transition`}
                 title={t('player.prev')}
+                aria-label={t('player.prev')}
               >
                 <ChevronUp className={iconSize} />
               </button>
@@ -623,6 +646,7 @@ export default function Player() {
                 onClick={() => navigateChannel(1)}
                 className={`${btnPad} text-white/70 hover:text-white hover:bg-white/10 focus-visible:text-white focus-visible:bg-white/10 rounded-lg transition`}
                 title={t('player.next')}
+                aria-label={t('player.next')}
               >
                 <ChevronDown className={iconSize} />
               </button>
@@ -632,28 +656,37 @@ export default function Player() {
                   showChannelList ? 'text-accent bg-white/10' : 'text-white/70 hover:text-white hover:bg-white/10 focus-visible:text-white focus-visible:bg-white/10'
                 }`}
                 title={t('player.channelList')}
+                aria-label={t('player.channelList')}
               >
                 <List className={iconSize} />
               </button>
             </>
           )}
           <button
-            onClick={() => {
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation();
               setMuted((m) => {
                 if (videoRef.current) videoRef.current.muted = !m;
                 return !m;
               });
             }}
-            className={`${btnPad} text-white/70 hover:text-white hover:bg-white/10 focus-visible:text-white focus-visible:bg-white/10 rounded-lg transition`}
+            className={`${isMobile ? 'p-3' : btnPad} rounded-lg transition ${
+              muted
+                ? 'text-red-400 bg-red-400/15'
+                : 'text-white/70 hover:text-white hover:bg-white/10 focus-visible:text-white focus-visible:bg-white/10'
+            }`}
             title={t('player.mute')}
+            aria-label={t('player.mute')}
           >
-            {muted ? <VolumeX className={iconSize} /> : <Volume2 className={iconSize} />}
+            {muted ? <VolumeX className={isMobile ? 'w-6 h-6' : iconSize} /> : <Volume2 className={isMobile ? 'w-6 h-6' : iconSize} />}
           </button>
           {!isTV && (
             <button
               onClick={togglePiP}
               className={`${btnPad} text-white/70 hover:text-white hover:bg-white/10 rounded-lg transition`}
-              title="Picture-in-Picture"
+              title={t('player.pip') || 'Picture-in-Picture'}
+              aria-label={t('player.pip') || 'Picture-in-Picture'}
             >
               <PictureInPicture2 className={iconSize} />
             </button>
@@ -662,6 +695,7 @@ export default function Player() {
             onClick={toggleFullscreen}
             className={`${btnPad} text-white/70 hover:text-white hover:bg-white/10 focus-visible:text-white focus-visible:bg-white/10 rounded-lg transition`}
             title={t('player.fullscreen')}
+            aria-label={t('player.fullscreen')}
           >
             {isFullscreen ? <Minimize className={iconSize} /> : <Maximize className={iconSize} />}
           </button>
@@ -669,6 +703,7 @@ export default function Player() {
             onClick={closePlayer}
             className={`${btnPad} text-white/70 hover:text-white hover:bg-white/10 focus-visible:text-white focus-visible:bg-white/10 rounded-lg transition`}
             title={t('player.close')}
+            aria-label={t('player.close')}
           >
             <X className={iconSize} />
           </button>
@@ -678,10 +713,10 @@ export default function Player() {
       {/* TV overlay hint */}
       {isTV && showControls && (
         <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 flex items-center gap-6 glass rounded-2xl px-8 py-4 text-white/60 text-sm animate-fade-in">
-          <span className="flex items-center gap-1.5"><span className="text-accent">▲▼</span> Chaînes</span>
-          <span className="flex items-center gap-1.5"><span className="text-accent">◀</span> Retour</span>
-          <span className="flex items-center gap-1.5"><span className="text-accent">▶</span> Liste</span>
-          <span className="flex items-center gap-1.5"><span className="text-accent">OK</span> Pause</span>
+          <span className="flex items-center gap-1.5"><span className="text-accent">▲▼</span> {t('player.channels')}</span>
+          <span className="flex items-center gap-1.5"><span className="text-accent">◀</span> {t('vod.back')}</span>
+          <span className="flex items-center gap-1.5"><span className="text-accent">▶</span> {t('player.channelList')}</span>
+          <span className="flex items-center gap-1.5"><span className="text-accent">OK</span> {t('settings.key.playPause')}</span>
         </div>
       )}
 
@@ -695,12 +730,12 @@ export default function Player() {
             </div>
             <div className="text-center">
               <p className={`text-white/80 font-medium ${isTV ? 'text-lg' : 'text-base'}`}>{t('player.loading')}</p>
-              <p className="text-white/40 text-xs mt-1">Connexion au flux...</p>
+              <p className="text-white/40 text-xs mt-1">{t('player.loading')}</p>
             </div>
             {retryCountRef.current > 0 && (
               <div className="flex items-center gap-2 bg-white/5 px-3 py-1.5 rounded-full">
                 <RefreshCw className="w-3 h-3 text-accent animate-spin" />
-                <p className="text-white/50 text-xs">Tentative {retryCountRef.current}/{maxRetries}</p>
+                <p className="text-white/50 text-xs">{retryCountRef.current}/{maxRetries}</p>
               </div>
             )}
           </div>
@@ -716,7 +751,7 @@ export default function Player() {
               className="shrink-0 flex items-center gap-1.5 bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-lg transition text-white text-xs font-medium"
             >
               <RefreshCw className="w-3.5 h-3.5" />
-              Réessayer
+              {t('player.retry') || 'Retry'}
             </button>
           </div>
         )}
@@ -751,16 +786,58 @@ export default function Player() {
         </div>
       )}
 
-      {/* Volume bar */}
-      {showControls && !isTV && (
+      {/* Volume bar - desktop only (mobile volume is OS-controlled) */}
+      {showControls && !isTV && !isMobile && (
         <div className="absolute bottom-16 left-4 z-30 flex flex-col items-center gap-1 glass rounded-full px-1.5 py-2">
-          <div className="w-1 h-20 bg-white/20 rounded-full overflow-hidden rotate-180">
+          <div
+            className="w-3 h-24 bg-white/20 rounded-full overflow-hidden relative cursor-pointer"
+            onClick={(e) => {
+              const rect = e.currentTarget.getBoundingClientRect();
+              const pct = 1 - (e.clientY - rect.top) / rect.height;
+              const newVol = Math.max(0, Math.min(1, pct));
+              setVolume(newVol);
+              if (videoRef.current) videoRef.current.volume = newVol;
+              if (newVol > 0 && muted) {
+                setMuted(false);
+                if (videoRef.current) videoRef.current.muted = false;
+              }
+            }}
+            onMouseDown={(e) => {
+              e.preventDefault();
+              const bar = e.currentTarget;
+              const onMove = (ev: MouseEvent) => {
+                const rect = bar.getBoundingClientRect();
+                const pct = 1 - (ev.clientY - rect.top) / rect.height;
+                const newVol = Math.max(0, Math.min(1, pct));
+                setVolume(newVol);
+                if (videoRef.current) videoRef.current.volume = newVol;
+              };
+              const onUp = () => {
+                window.removeEventListener('mousemove', onMove);
+                window.removeEventListener('mouseup', onUp);
+              };
+              window.addEventListener('mousemove', onMove);
+              window.addEventListener('mouseup', onUp);
+            }}
+          >
             <div
-              className="w-full bg-accent rounded-full transition-all"
+              className="absolute bottom-0 left-0 right-0 bg-accent rounded-full transition-[height] duration-75"
               style={{ height: `${volume * 100}%` }}
+            />
+            <div
+              className="absolute left-1/2 -translate-x-1/2 w-3.5 h-3.5 bg-white rounded-full shadow-md border-2 border-accent"
+              style={{ bottom: `calc(${volume * 100}% - 7px)` }}
             />
           </div>
           <span className="text-white/50 text-[10px]">{Math.round(volume * 100)}%</span>
+        </div>
+      )}
+
+      {/* Muted indicator - mobile */}
+      {showControls && isMobile && muted && (
+        <div className="absolute bottom-20 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 bg-black/70 backdrop-blur-sm rounded-full px-4 py-2">
+          <VolumeX className="w-5 h-5 text-red-400" />
+          <span className="text-red-400 text-sm font-medium">Muet</span>
         </div>
       )}
 
@@ -816,22 +893,13 @@ export default function Player() {
                   <span className={`text-text-secondary/50 font-mono shrink-0 ${isTV ? 'text-xs w-8' : 'text-[10px] w-6'}`}>
                     {i + 1}
                   </span>
-                  <div className={`rounded-md bg-surface-lighter flex items-center justify-center shrink-0 overflow-hidden ${
-                    isTV ? 'w-10 h-10' : 'w-8 h-8'
-                  }`}>
-                    {stream.stream_icon ? (
-                      <img
-                        src={stream.stream_icon}
-                        alt=""
-                        className="w-full h-full object-contain"
-                        loading="lazy"
-                        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                      />
-                    ) : (
-                      <span className={`text-text-secondary font-bold ${isTV ? 'text-xs' : 'text-[10px]'}`}>
-                        {stream.name.charAt(0)}
-                      </span>
-                    )}
+                  <div className={`relative shrink-0 ${isTV ? 'w-10 h-10' : 'w-8 h-8'}`}>
+                    <DragonBallAura streamId={stream.stream_id} size="sm" />
+                    <div className={`relative z-[1] rounded-md flex items-center justify-center overflow-hidden ${
+                      isTV ? 'w-10 h-10' : 'w-8 h-8'
+                    }`}>
+                      <ChannelLogo name={stream.name} size="sm" />
+                    </div>
                   </div>
                   <span className={`flex-1 truncate ${
                     isTV ? 'text-sm' : 'text-xs'

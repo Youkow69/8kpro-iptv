@@ -148,6 +148,14 @@ function getAbbreviation(name: string): string {
     .join('');
 }
 
+/** Get the brand glow color for a channel name */
+export function getChannelGlowColor(name: string): string {
+  const brand = getBrandInfo(name);
+  if (brand) return brand.colors[1];
+  const hash = hashStr(name);
+  return GRADIENT_PALETTES[hash % GRADIENT_PALETTES.length][0];
+}
+
 interface ChannelLogoProps {
   name: string;
   size?: 'sm' | 'md' | 'lg';
@@ -197,19 +205,13 @@ export default function ChannelLogo({ name, size = 'md', className = '' }: Chann
 
   return (
     <div
-      className={`${sizeClasses[size]} flex items-center justify-center shrink-0 relative overflow-hidden ${className}`}
-      style={{
-        background: gradient,
-        boxShadow: '0 2px 8px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.15)',
-      }}
+      className={`${sizeClasses[size]} flex items-center justify-center shrink-0 relative ${className}`}
     >
-      {/* Shine effect */}
-      <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-black/10 pointer-events-none" />
       <span
         className={`${fontSize} font-black tracking-tight leading-none select-none relative`}
         style={{
-          color: textColor,
-          textShadow: '0 1px 2px rgba(0,0,0,0.4)',
+          color: '#ffffff',
+          textShadow: '0 1px 3px rgba(0,0,0,0.7), 0 0 8px rgba(255,180,30,0.3)',
           letterSpacing: abbr.length > 3 ? '-0.05em' : '0',
         }}
       >

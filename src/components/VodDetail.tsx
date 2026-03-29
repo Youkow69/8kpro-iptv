@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { ArrowLeft, Play, Star, Calendar, Film, Users } from 'lucide-react';
 import type { VodStream } from '../types/xtream';
 import { useTranslation } from '../i18n/useTranslation';
@@ -8,8 +9,12 @@ interface Props {
   onPlay: () => void;
 }
 
+const PLOT_MAX = 200;
+
 export default function VodDetail({ vod, onBack, onPlay }: Props) {
   const { t } = useTranslation();
+  const [plotExpanded, setPlotExpanded] = useState(false);
+  const isLongPlot = (vod.plot?.length ?? 0) > PLOT_MAX;
 
   return (
     <div className="flex-1 overflow-y-auto page-enter">
@@ -78,7 +83,17 @@ export default function VodDetail({ vod, onBack, onPlay }: Props) {
             {vod.plot && (
               <div className="mb-5">
                 <h3 className="text-text-primary font-semibold text-sm mb-2">{t('vod.synopsis')}</h3>
-                <p className="text-text-secondary text-sm leading-relaxed">{vod.plot}</p>
+                <p className="text-text-secondary text-sm leading-relaxed">
+                  {isLongPlot && !plotExpanded ? vod.plot.slice(0, PLOT_MAX) + '…' : vod.plot}
+                  {isLongPlot && (
+                    <button
+                      onClick={() => setPlotExpanded((e) => !e)}
+                      className="ml-1 text-accent text-xs font-medium hover:underline"
+                    >
+                      {plotExpanded ? t('vod.showLess') : t('vod.showMore')}
+                    </button>
+                  )}
+                </p>
               </div>
             )}
 

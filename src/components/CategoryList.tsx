@@ -3,7 +3,15 @@ import { Search, Loader2, Layers } from 'lucide-react';
 import type { Category } from '../types/xtream';
 import { useIsTV } from '../hooks/useIsTV';
 import ChannelLogo from './ChannelLogo';
+import DragonBallAura from './DragonBallAura';
 import { playNav } from '../services/sounds';
+
+/** Convert category_id string to a stable number for DragonBallAura */
+function catIdToNum(id: string): number {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = ((h << 5) - h + id.charCodeAt(i)) | 0;
+  return Math.abs(h);
+}
 
 interface Props {
   categories: Category[];
@@ -42,13 +50,18 @@ export default function CategoryList({ categories, selected, onSelect, search, o
               <button
                 key={cat.category_id}
                 onClick={() => { playNav(); onSelect(cat.category_id); }}
-                className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap ${
+                className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap group ${
                   selected === cat.category_id
                     ? 'bg-accent text-black shadow-sm shadow-accent/20'
                     : 'bg-surface-light/50 text-text-secondary hover:text-text-primary'
                 }`}
               >
-                <ChannelLogo name={cat.category_name} size="sm" />
+                <div className="relative w-8 h-8 shrink-0">
+                  <DragonBallAura streamId={catIdToNum(cat.category_id)} size="sm" />
+                  <div className="relative z-[1]">
+                    <ChannelLogo name={cat.category_name} size="sm" />
+                  </div>
+                </div>
                 {cat.category_name}
               </button>
             ))
@@ -124,7 +137,7 @@ function CategoryButton({ cat, isSelected, onSelect, isTV }: {
       ref={btnRef}
       onFocus={handleFocus}
       onClick={() => { playNav(); onSelect(cat.category_id); }}
-      className={`w-full text-left rounded-xl transition-all flex items-center ${
+      className={`w-full text-left rounded-xl transition-all flex items-center group ${
         isTV
           ? 'text-base px-4 py-3 gap-3'
           : 'text-sm px-3 py-2.5 gap-2.5'
@@ -134,7 +147,12 @@ function CategoryButton({ cat, isSelected, onSelect, isTV }: {
           : 'text-text-secondary hover:bg-surface-light/50 hover:text-text-primary'
       }`}
     >
-      <ChannelLogo name={cat.category_name} size="sm" />
+      <div className={`relative shrink-0 ${isTV ? 'w-10 h-10' : 'w-8 h-8'}`}>
+        <DragonBallAura streamId={catIdToNum(cat.category_id)} size="sm" />
+        <div className="relative z-[1]">
+          <ChannelLogo name={cat.category_name} size="sm" />
+        </div>
+      </div>
       <span className="truncate flex-1">{cat.category_name}</span>
       {isSelected && <span className="w-1.5 h-1.5 bg-accent rounded-full shrink-0" />}
     </button>

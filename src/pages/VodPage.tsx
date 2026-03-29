@@ -1,16 +1,19 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useAuthStore } from '../store/authStore';
 import { useIptvStore } from '../store/iptvStore';
 import { getVodCategories, getVodStreams, buildVodStreamUrl } from '../services/xtreamApi';
 import CategoryList from '../components/CategoryList';
 import MediaCard from '../components/MediaCard';
 import LoadingSpinner from '../components/LoadingSpinner';
+import SkeletonGrid from '../components/SkeletonGrid';
 import VodDetail from '../components/VodDetail';
 import type { VodStream } from '../types/xtream';
 import { useTranslation } from '../i18n/useTranslation';
 import { useIsTV } from '../hooks/useIsTV';
-import { ArrowUpDown, Film } from 'lucide-react';
+import { ArrowUpDown, Film, FolderOpen, Search as SearchIcon } from 'lucide-react';
 import { playClick } from '../services/sounds';
+import { useDebounce } from '../hooks/useDebounce';
+import ScrollToTop from '../components/ScrollToTop';
 
 type SortMode = 'default' | 'name' | 'rating' | 'year';
 
@@ -30,6 +33,8 @@ export default function VodPage() {
   const [search, setSearch] = useState('');
   const [selectedVod, setSelectedVod] = useState<VodStream | null>(null);
   const [sort, setSort] = useState<SortMode>('default');
+  const debouncedSearch = useDebounce(search, 200);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (vodCategories.length === 0) {
@@ -56,10 +61,9 @@ export default function VodPage() {
   }, [credentials, selectedVodCategory, setVodStreams]);
 
   let filtered = vodStreams.filter((v) =>
-    v.name.toLowerCase().includes(search.toLowerCase())
+    v.name.toLowerCase().includes(debouncedSearch.toLowerCase())
   );
 
-  // Sort
   if (sort === 'name') filtered = [...filtered].sort((a, b) => a.name.localeCompare(b.name));
   else if (sort === 'rating') filtered = [...filtered].sort((a, b) => (parseFloat(b.rating || '0') - parseFloat(a.rating || '0')));
   else if (sort === 'year') filtered = [...filtered].sort((a, b) => (b.year || '').localeCompare(a.year || ''));
@@ -80,10 +84,10 @@ export default function VodPage() {
   }
 
   const sortOptions: { id: SortMode; label: string }[] = [
-    { id: 'default', label: 'Defaut' },
+    { id: 'default', label: t('sort.default') },
     { id: 'name', label: 'A-Z' },
-    { id: 'rating', label: 'Note' },
-    { id: 'year', label: 'Annee' },
+    { id: 'rating', label: t('sort.rating') },
+    { id: 'year', label: t('sort.year') },
   ];
 
   return (
@@ -97,37 +101,41 @@ export default function VodPage() {
         searchPlaceholder={t('vod.search')}
         loading={loadingCats}
       />
-      <div className="flex-1 overflow-y-auto max-h-[calc(100vh-100px)] md:max-h-[calc(100vh-32px)]">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto max-h-[calc(100vh-100px)] md:max-h-[calc(100vh-32px)]">
         {/* Sort bar */}
         <div className="flex items-center gap-2 mb-4 px-1">
-          <ArrowUpDown className="w-3.5 h-3.5 text-text-secondary" />
-          <div className="flex gap-1 bg-surface-light/50 rounded-lg p-0.5">
+          <ArrowUpDown className="w-3.5 h-3.5 text-text-secondary/40" />
+          <div className="flex gap-1 bg-white/[0.04] rounded-lg p-0.5 border border-white/[0.03]">
             {sortOptions.map((s) => (
               <button
                 key={s.id}
                 onClick={() => { playClick(); setSort(s.id); }}
                 className={`px-3 py-1 rounded-md text-[11px] font-medium transition-all ${
-                  sort === s.id ? 'bg-accent text-black' : 'text-text-secondary hover:text-text-primary'
+                  sort === s.id ? 'bg-accent text-black shadow-sm' : 'text-text-secondary/50 hover:text-text-primary'
                 }`}
               >
                 {s.label}
               </button>
             ))}
           </div>
-          <span className="ml-auto text-text-secondary text-xs flex items-center gap-1">
+          <span className="ml-auto text-text-secondary/40 text-xs flex items-center gap-1 font-medium">
             <Film className="w-3 h-3" /> {filtered.length}
           </span>
         </div>
 
-        {loading || loadingCats ? (
+        {loading ? (
+          <SkeletonGrid count={15} type="poster" />
+        ) : loadingCats ? (
           <LoadingSpinner text={t('vod.loading')} />
         ) : !selectedVodCategory ? (
-          <div className="flex items-center justify-center py-20 text-text-secondary">
-            {t('live.selectCategory')}
+          <div className="flex flex-col items-center justify-center py-20 text-text-secondary/50 gap-3">
+            <FolderOpen className="w-10 h-10 text-text-secondary/20" />
+            <p>{t('live.selectCategory')}</p>
           </div>
         ) : filtered.length === 0 ? (
-          <div className="flex items-center justify-center py-20 text-text-secondary">
-            {t('vod.noResults')}
+          <div className="flex flex-col items-center justify-center py-20 text-text-secondary/50 gap-3">
+            {debouncedSearch ? <SearchIcon className="w-10 h-10 text-text-secondary/20" /> : <Film className="w-10 h-10 text-text-secondary/20" />}
+            <p>{t('vod.noResults')}</p>
           </div>
         ) : (
           <div className={`grid gap-3 stagger-children ${
@@ -145,6 +153,7 @@ export default function VodPage() {
           </div>
         )}
       </div>
+      <ScrollToTop scrollRef={scrollRef} />
     </div>
   );
 }

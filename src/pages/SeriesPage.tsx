@@ -1,16 +1,19 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useAuthStore } from '../store/authStore';
 import { useIptvStore } from '../store/iptvStore';
 import { getSeriesCategories, getSeriesList } from '../services/xtreamApi';
 import CategoryList from '../components/CategoryList';
 import MediaCard from '../components/MediaCard';
 import LoadingSpinner from '../components/LoadingSpinner';
+import SkeletonGrid from '../components/SkeletonGrid';
 import SeriesDetail from '../components/SeriesDetail';
 import type { Series } from '../types/xtream';
 import { useTranslation } from '../i18n/useTranslation';
 import { useIsTV } from '../hooks/useIsTV';
-import { ArrowUpDown, Clapperboard } from 'lucide-react';
+import { ArrowUpDown, Clapperboard, FolderOpen, Search as SearchIcon } from 'lucide-react';
 import { playClick } from '../services/sounds';
+import { useDebounce } from '../hooks/useDebounce';
+import ScrollToTop from '../components/ScrollToTop';
 
 type SortMode = 'default' | 'name' | 'rating';
 
@@ -29,6 +32,8 @@ export default function SeriesPage() {
   const [search, setSearch] = useState('');
   const [selectedSeries, setSelectedSeries] = useState<Series | null>(null);
   const [sort, setSort] = useState<SortMode>('default');
+  const debouncedSearch = useDebounce(search, 200);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (seriesCategories.length === 0) {
@@ -55,7 +60,7 @@ export default function SeriesPage() {
   }, [credentials, selectedSeriesCategory, setSeriesList]);
 
   let filtered = seriesList.filter((s) =>
-    s.name.toLowerCase().includes(search.toLowerCase())
+    s.name.toLowerCase().includes(debouncedSearch.toLowerCase())
   );
 
   if (sort === 'name') filtered = [...filtered].sort((a, b) => a.name.localeCompare(b.name));
@@ -66,9 +71,9 @@ export default function SeriesPage() {
   }
 
   const sortOptions: { id: SortMode; label: string }[] = [
-    { id: 'default', label: 'Defaut' },
+    { id: 'default', label: t('sort.default') },
     { id: 'name', label: 'A-Z' },
-    { id: 'rating', label: 'Note' },
+    { id: 'rating', label: t('sort.rating') },
   ];
 
   return (
@@ -82,7 +87,7 @@ export default function SeriesPage() {
         searchPlaceholder={t('series.search')}
         loading={loadingCats}
       />
-      <div className="flex-1 overflow-y-auto max-h-[calc(100vh-100px)] md:max-h-[calc(100vh-32px)]">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto max-h-[calc(100vh-100px)] md:max-h-[calc(100vh-32px)]">
         {/* Sort bar */}
         <div className="flex items-center gap-2 mb-4 px-1">
           <ArrowUpDown className="w-3.5 h-3.5 text-text-secondary" />
@@ -104,15 +109,19 @@ export default function SeriesPage() {
           </span>
         </div>
 
-        {loading || loadingCats ? (
+        {loading ? (
+          <SkeletonGrid count={15} type="poster" />
+        ) : loadingCats ? (
           <LoadingSpinner text={t('series.loading')} />
         ) : !selectedSeriesCategory ? (
-          <div className="flex items-center justify-center py-20 text-text-secondary">
-            {t('live.selectCategory')}
+          <div className="flex flex-col items-center justify-center py-20 text-text-secondary/50 gap-3">
+            <FolderOpen className="w-10 h-10 text-text-secondary/20" />
+            <p>{t('live.selectCategory')}</p>
           </div>
         ) : filtered.length === 0 ? (
-          <div className="flex items-center justify-center py-20 text-text-secondary">
-            {t('series.noResults')}
+          <div className="flex flex-col items-center justify-center py-20 text-text-secondary/50 gap-3">
+            {debouncedSearch ? <SearchIcon className="w-10 h-10 text-text-secondary/20" /> : <Clapperboard className="w-10 h-10 text-text-secondary/20" />}
+            <p>{t('series.noResults')}</p>
           </div>
         ) : (
           <div className={`grid gap-3 stagger-children ${
@@ -130,6 +139,7 @@ export default function SeriesPage() {
           </div>
         )}
       </div>
+      <ScrollToTop scrollRef={scrollRef} />
     </div>
   );
 }
