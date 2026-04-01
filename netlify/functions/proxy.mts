@@ -25,14 +25,20 @@ export default async (request: Request, _context: Context) => {
       if (key !== "url") targetUrl.searchParams.set(key, value);
     });
 
-    // Forward Range header for video seeking + Referer to avoid 403
     const targetOrigin = targetUrl.origin;
+    const isSegment = target.includes(".ts") || target.includes(".aac") || target.includes(".mp4");
+    const appId = request.headers.get("x-app-id");
+
     const fetchHeaders: Record<string, string> = {
-      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+      "User-Agent": appId === "com.pro8k.iptv"
+        ? "8KPro-IPTV/2.0.0 (Proxy; NetlifyFunction)"
+        : "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
       Accept: "*/*",
-      Referer: targetOrigin + "/",
-      Origin: targetOrigin,
     };
+    if (!isSegment) {
+      fetchHeaders["Referer"] = targetOrigin + "/";
+      fetchHeaders["Origin"] = targetOrigin;
+    }
     const rangeHeader = request.headers.get("range");
     if (rangeHeader) {
       fetchHeaders["Range"] = rangeHeader;
@@ -50,21 +56,21 @@ export default async (request: Request, _context: Context) => {
       ct.includes("mpegurl") ||
       ct.includes("x-mpegURL");
 
-    const headers = new Headers({
+    const corsHeaders: Record<string, string> = {
       "Access-Control-Allow-Origin": "*",
       "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
       "Access-Control-Allow-Headers": "*",
-    });
+    };
 
     if (isM3u8) {
       let body = await proxyRes.text();
-
-      // The final URL after redirects
       const finalUrl = proxyRes.url || targetUrl.toString();
       const baseUrl = finalUrl.substring(0, finalUrl.lastIndexOf("/") + 1);
       const origin = new URL(finalUrl).origin;
 
-      // Rewrite segment/playlist URLs to go through our proxy
+      const reqUrl = new URL(request.url);
+      const proxyBase = reqUrl.origin + "/.netlify/functions/proxy";
+
       body = body.replace(/^(?!#)(.+)$/gm, (line) => {
         const trimmed = line.trim();
         if (!trimmed || trimmed.startsWith("#")) return line;
@@ -76,25 +82,27 @@ export default async (request: Request, _context: Context) => {
         } else {
           absoluteUrl = baseUrl + trimmed;
         }
-        return "/api/proxy?url=" + encodeURIComponent(absoluteUrl);
+        return proxyBase + "?url=" + encodeURIComponent(absoluteUrl);
       });
 
-      headers.set("Content-Type", "application/vnd.apple.mpegurl");
-      return new Response(body, { status: 200, headers });
+      return new Response(body, {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/vnd.apple.mpegurl" },
+      });
     }
 
-    // Non-m3u8: stream through with Range support
-    if (ct) headers.set("Content-Type", ct);
+    const responseHeaders = new Headers(corsHeaders);
+    if (ct) responseHeaders.set("Content-Type", ct);
     const cl = proxyRes.headers.get("content-length");
-    if (cl) headers.set("Content-Length", cl);
+    if (cl) responseHeaders.set("Content-Length", cl);
     const cr = proxyRes.headers.get("content-range");
-    if (cr) headers.set("Content-Range", cr);
+    if (cr) responseHeaders.set("Content-Range", cr);
     const ar = proxyRes.headers.get("accept-ranges");
-    headers.set("Accept-Ranges", ar || "bytes");
+    responseHeaders.set("Accept-Ranges", ar || "bytes");
 
     return new Response(proxyRes.body, {
       status: proxyRes.status,
-      headers,
+      headers: responseHeaders,
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Unknown error";

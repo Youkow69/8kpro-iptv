@@ -163,7 +163,7 @@ interface ChannelLogoProps {
 }
 
 export default function ChannelLogo({ name, size = 'md', className = '' }: ChannelLogoProps) {
-  const { abbr, gradient, textColor, fontSize } = useMemo(() => {
+  const { abbr, fontSize } = useMemo(() => {
     const brand = getBrandInfo(name);
     const hash = hashStr(name);
 

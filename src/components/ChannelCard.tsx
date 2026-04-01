@@ -5,7 +5,6 @@ import DragonBallAura from './DragonBallAura';
 import { useIptvStore } from '../store/iptvStore';
 import { useIsTV } from '../hooks/useIsTV';
 import { playClick, playFavoriteAdd, playFavoriteRemove } from '../services/sounds';
-import { useTranslation } from '../i18n/useTranslation';
 
 interface Props {
   stream: { stream_id: number; name: string; stream_icon?: string; epg_channel_id?: string };
@@ -14,11 +13,10 @@ interface Props {
   index?: number;
 }
 
-export default memo(function ChannelCard({ stream, onClick, isLast, index }: Props) {
+export default memo(function ChannelCard({ stream, onClick, index }: Props) {
   const { favorites, toggleFavorite } = useIptvStore();
   const isFav = favorites.includes(stream.stream_id);
   const isTV = useIsTV();
-  const { t } = useTranslation();
   const ref = useRef<HTMLButtonElement>(null);
 
   return (

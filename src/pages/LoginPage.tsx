@@ -14,11 +14,11 @@ const APP_VERSION = 'v3.5.1';
 function getApiBase(): string {
   const cap = (window as any)?.Capacitor;
   if (cap) {
-    if (typeof cap.isNativePlatform === 'function' && cap.isNativePlatform()) return 'https://8kproultimate.vercel.app';
-    if (cap.platform && cap.platform !== 'web') return 'https://8kproultimate.vercel.app';
+    if (typeof cap.isNativePlatform === 'function' && cap.isNativePlatform()) return 'https://8kpro-iptv.netlify.app';
+    if (cap.platform && cap.platform !== 'web') return 'https://8kpro-iptv.netlify.app';
   }
-  if (window.location.protocol === 'capacitor:' || window.location.protocol === 'ionic:') return 'https://8kproultimate.vercel.app';
-  if (!window.location.hostname.includes('vercel') && !window.location.hostname.includes('localhost')) return 'https://8kproultimate.vercel.app';
+  if (window.location.protocol === 'capacitor:' || window.location.protocol === 'ionic:') return 'https://8kpro-iptv.netlify.app';
+  if (!window.location.hostname.includes('netlify') && !window.location.hostname.includes('localhost')) return 'https://8kpro-iptv.netlify.app';
   return '';
 }
 

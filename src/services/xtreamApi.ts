@@ -25,10 +25,10 @@ function isNative(): boolean {
   return false;
 }
 
-const VERCEL_PROXY = 'https://8kproultimate.vercel.app/api/proxy';
+const NETLIFY_PROXY = 'https://8kpro-iptv.netlify.app/api/proxy';
 
 function getProxy(): string {
-  return isNative() ? VERCEL_PROXY : (window.location.origin + '/api/proxy');
+  return isNative() ? NETLIFY_PROXY : (window.location.origin + '/api/proxy');
 }
 
 // API calls: ALWAYS through proxy (needed for CORS + Cloudflare bypass)

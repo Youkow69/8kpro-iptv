@@ -9,7 +9,7 @@ import { epgService, type EpgProgram } from '../services/epgService';
 import { useIsTV } from '../hooks/useIsTV';
 import {
   Play, Clock, Tv, Film, TrendingUp,
-  ChevronRight, Star, Zap, Radio, Clapperboard, Sparkles,
+  ChevronRight, Star, Radio, Clapperboard,
 } from 'lucide-react';
 import { playClick as _playClick } from '../services/sounds';
 void _playClick;
