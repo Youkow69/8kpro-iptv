@@ -45,8 +45,19 @@ export default function CategoryList({ categories, selected, onSelect, search, o
         <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
           {loading ? (
             <Loader2 className="w-5 h-5 text-accent animate-spin mx-auto" />
-          ) : (
-            categories.map((cat) => (
+          ) : (<>
+              <button
+                onClick={() => { playNav(); onSelect(null); }}
+                className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap ${
+                  selected === null
+                    ? 'bg-accent text-black shadow-sm shadow-accent/20'
+                    : 'bg-surface-light/50 text-text-secondary hover:text-text-primary'
+                }`}
+              >
+                <Layers className="w-4 h-4" />
+                Tous
+              </button>
+            {categories.map((cat) => (
               <button
                 key={cat.category_id}
                 onClick={() => { playNav(); onSelect(cat.category_id); }}
@@ -64,8 +75,8 @@ export default function CategoryList({ categories, selected, onSelect, search, o
                 </div>
                 {cat.category_name}
               </button>
-            ))
-          )}
+            ))}
+          </>)}
         </div>
       </div>
 
@@ -101,8 +112,21 @@ export default function CategoryList({ categories, selected, onSelect, search, o
             <div className="flex items-center justify-center py-6">
               <Loader2 className="w-5 h-5 text-accent animate-spin" />
             </div>
-          ) : (
-            categories.map((cat) => (
+          ) : (<>
+              <button
+                onClick={() => { playNav(); onSelect(null); }}
+                className={`w-full text-left rounded-xl transition-all flex items-center group ${
+                  isTV ? 'text-base px-4 py-3 gap-3' : 'text-sm px-3 py-2.5 gap-2.5'
+                } ${
+                  selected === null
+                    ? 'bg-gradient-to-r from-accent/20 to-accent/5 text-accent font-medium border-l-3 border-accent shadow-sm shadow-accent/10'
+                    : 'text-text-secondary hover:bg-surface-light/50 hover:text-text-primary'
+                }`}
+              >
+                <Layers className={`shrink-0 ${isTV ? 'w-5 h-5' : 'w-4 h-4'}`} />
+                <span className="truncate flex-1">Tous</span>
+              </button>
+            {categories.map((cat) => (
               <CategoryButton
                 key={cat.category_id}
                 cat={cat}
@@ -110,8 +134,8 @@ export default function CategoryList({ categories, selected, onSelect, search, o
                 onSelect={onSelect}
                 isTV={isTV}
               />
-            ))
-          )}
+            ))}
+          </>)}
         </div>
       </div>
     </>

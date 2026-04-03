@@ -10,7 +10,7 @@ import SeriesDetail from '../components/SeriesDetail';
 import type { Series } from '../types/xtream';
 import { useTranslation } from '../i18n/useTranslation';
 import { useIsTV } from '../hooks/useIsTV';
-import { ArrowUpDown, Clapperboard, FolderOpen, Search as SearchIcon } from 'lucide-react';
+import { ArrowUpDown, Clapperboard, Search as SearchIcon } from 'lucide-react';
 import { playClick } from '../services/sounds';
 import { useDebounce } from '../hooks/useDebounce';
 import ScrollToTop from '../components/ScrollToTop';
@@ -41,9 +41,7 @@ export default function SeriesPage() {
       getSeriesCategories(credentials)
         .then((cats) => {
           setSeriesCategories(cats);
-          if (!selectedSeriesCategory && cats.length > 0) {
-            setSelectedSeriesCategory(cats[0].category_id);
-          }
+          // Default to "Tous" (null)
         })
         .catch(console.error)
         .finally(() => setLoadingCats(false));
@@ -51,9 +49,8 @@ export default function SeriesPage() {
   }, [credentials, seriesCategories.length, setSeriesCategories, selectedSeriesCategory, setSelectedSeriesCategory]);
 
   useEffect(() => {
-    if (!selectedSeriesCategory) return;
     setLoading(true);
-    getSeriesList(credentials, selectedSeriesCategory)
+    getSeriesList(credentials, selectedSeriesCategory ?? undefined)
       .then(setSeriesList)
       .catch(console.error)
       .finally(() => setLoading(false));
@@ -113,11 +110,6 @@ export default function SeriesPage() {
           <SkeletonGrid count={15} type="poster" />
         ) : loadingCats ? (
           <LoadingSpinner text={t('series.loading')} />
-        ) : !selectedSeriesCategory ? (
-          <div className="flex flex-col items-center justify-center py-20 text-text-secondary/50 gap-3">
-            <FolderOpen className="w-10 h-10 text-text-secondary/20" />
-            <p>{t('live.selectCategory')}</p>
-          </div>
         ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-text-secondary/50 gap-3">
             {debouncedSearch ? <SearchIcon className="w-10 h-10 text-text-secondary/20" /> : <Clapperboard className="w-10 h-10 text-text-secondary/20" />}

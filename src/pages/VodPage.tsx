@@ -10,7 +10,7 @@ import VodDetail from '../components/VodDetail';
 import type { VodStream } from '../types/xtream';
 import { useTranslation } from '../i18n/useTranslation';
 import { useIsTV } from '../hooks/useIsTV';
-import { ArrowUpDown, Film, FolderOpen, Search as SearchIcon } from 'lucide-react';
+import { ArrowUpDown, Film, Search as SearchIcon } from 'lucide-react';
 import { playClick } from '../services/sounds';
 import { useDebounce } from '../hooks/useDebounce';
 import ScrollToTop from '../components/ScrollToTop';
@@ -42,9 +42,7 @@ export default function VodPage() {
       getVodCategories(credentials)
         .then((cats) => {
           setVodCategories(cats);
-          if (!selectedVodCategory && cats.length > 0) {
-            setSelectedVodCategory(cats[0].category_id);
-          }
+          // Default to "Tous" (null)
         })
         .catch(console.error)
         .finally(() => setLoadingCats(false));
@@ -52,9 +50,8 @@ export default function VodPage() {
   }, [credentials, vodCategories.length, setVodCategories, selectedVodCategory, setSelectedVodCategory]);
 
   useEffect(() => {
-    if (!selectedVodCategory) return;
     setLoading(true);
-    getVodStreams(credentials, selectedVodCategory)
+    getVodStreams(credentials, selectedVodCategory ?? undefined)
       .then(setVodStreams)
       .catch(console.error)
       .finally(() => setLoading(false));
@@ -127,11 +124,6 @@ export default function VodPage() {
           <SkeletonGrid count={15} type="poster" />
         ) : loadingCats ? (
           <LoadingSpinner text={t('vod.loading')} />
-        ) : !selectedVodCategory ? (
-          <div className="flex flex-col items-center justify-center py-20 text-text-secondary/50 gap-3">
-            <FolderOpen className="w-10 h-10 text-text-secondary/20" />
-            <p>{t('live.selectCategory')}</p>
-          </div>
         ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-text-secondary/50 gap-3">
             {debouncedSearch ? <SearchIcon className="w-10 h-10 text-text-secondary/20" /> : <Film className="w-10 h-10 text-text-secondary/20" />}

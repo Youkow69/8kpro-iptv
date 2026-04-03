@@ -6,7 +6,7 @@ import CategoryList from '../components/CategoryList';
 import ChannelCard from '../components/ChannelCard';
 import LoadingSpinner from '../components/LoadingSpinner';
 import SkeletonGrid from '../components/SkeletonGrid';
-import { Star, LayoutGrid, List, Tv, Search as SearchIcon, FolderOpen } from 'lucide-react';
+import { Star, LayoutGrid, List, Tv, Search as SearchIcon } from 'lucide-react';
 import { useTranslation } from '../i18n/useTranslation';
 import { useIsTV } from '../hooks/useIsTV';
 import { playClick } from '../services/sounds';
@@ -44,9 +44,7 @@ export default function LivePage() {
       getLiveCategories(credentials)
         .then((cats) => {
           setLiveCategories(cats);
-          if (!selectedLiveCategory && cats.length > 0) {
-            setSelectedLiveCategory(cats[0].category_id);
-          }
+          // Default to "Tous" (null) — loads all streams
         })
         .catch(console.error)
         .finally(() => setLoadingCats(false));
@@ -54,9 +52,8 @@ export default function LivePage() {
   }, [credentials, liveCategories.length, setLiveCategories, selectedLiveCategory, setSelectedLiveCategory]);
 
   useEffect(() => {
-    if (!selectedLiveCategory) return;
     setLoading(true);
-    getLiveStreams(credentials, selectedLiveCategory)
+    getLiveStreams(credentials, selectedLiveCategory ?? undefined)
       .then(setLiveStreams)
       .catch(console.error)
       .finally(() => setLoading(false));
@@ -128,11 +125,6 @@ export default function LivePage() {
             <SkeletonGrid count={12} type="channel" />
           ) : loadingCats ? (
             <LoadingSpinner text={t('live.loading')} />
-          ) : !selectedLiveCategory ? (
-            <div className="flex flex-col items-center justify-center py-20 text-text-secondary/50 gap-3">
-              <FolderOpen className="w-10 h-10 text-text-secondary/20" />
-              <p>{t('live.selectCategory')}</p>
-            </div>
           ) : filtered.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 text-text-secondary/50 gap-3">
               {debouncedSearch ? <SearchIcon className="w-10 h-10 text-text-secondary/20" /> : showFavsOnly ? <Star className="w-10 h-10 text-text-secondary/20" /> : <Tv className="w-10 h-10 text-text-secondary/20" />}
