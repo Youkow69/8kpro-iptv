@@ -69,7 +69,7 @@ export default async (request: Request, _context: Context) => {
       const origin = new URL(finalUrl).origin;
 
       const reqUrl = new URL(request.url);
-      const proxyBase = reqUrl.origin + "/.netlify/functions/proxy";
+      const proxyBase = reqUrl.origin + "/api/proxy";
 
       body = body.replace(/^(?!#)(.+)$/gm, (line) => {
         const trimmed = line.trim();
