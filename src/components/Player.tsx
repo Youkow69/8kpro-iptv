@@ -157,6 +157,13 @@ export default function Player() {
       });
 
       hls.on(Hls.Events.ERROR, (_event, data) => {
+        // Detect codec errors (EC-3 Dolby Digital Plus)
+        const errMsg = (data.error?.message || data.reason || '').toLowerCase();
+        if (data.fatal && (errMsg.includes('ec-3') || errMsg.includes('dolby') || errMsg.includes('addsourcebuffer') || errMsg.includes('codec'))) {
+          setLoading(false);
+          setError(t('player.error.codec'));
+          return;
+        }
         if (data.fatal) {
           if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
             if (retryCountRef.current < 8) {
@@ -345,8 +352,18 @@ export default function Player() {
         lastTime = now;
       }, 5000);
 
-      // Handle fatal errors
-      player.on(mpegts.Events.ERROR, () => {
+      // Handle fatal errors — detect codec issues (EC-3 Dolby)
+      player.on(mpegts.Events.ERROR, (_errorType: string, errorDetail: string, info?: { msg?: string }) => {
+        const msg = (info?.msg || errorDetail || '').toLowerCase();
+        if (msg.includes('ec-3') || msg.includes('dolby') || msg.includes('addsourcebuffer') || msg.includes('codec')) {
+          setLoading(false);
+          setError(t('player.error.codec'));
+          clearTimeout(loadTimeout);
+          clearInterval(playNudge);
+          try { player.pause(); player.unload(); player.detachMediaElement(); player.destroy(); } catch {}
+          mpegtsRef.current = null;
+          return;
+        }
         if (hasStarted && !reconnecting) silentReconnect();
       });
 

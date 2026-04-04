@@ -6,7 +6,7 @@ import CategoryList from '../components/CategoryList';
 import ChannelCard from '../components/ChannelCard';
 import LoadingSpinner from '../components/LoadingSpinner';
 import SkeletonGrid from '../components/SkeletonGrid';
-import { Star, LayoutGrid, List, Tv, Search as SearchIcon } from 'lucide-react';
+import { Star, LayoutGrid, List, Tv, Search as SearchIcon, ArrowUpDown } from 'lucide-react';
 import { useTranslation } from '../i18n/useTranslation';
 import { useIsTV } from '../hooks/useIsTV';
 import { playClick } from '../services/sounds';
@@ -32,6 +32,7 @@ export default function LivePage() {
   const [loadingCats, setLoadingCats] = useState(false);
   const [search, setSearch] = useState('');
   const [showFavsOnly, setShowFavsOnly] = useState(false);
+  const [sort, setSort] = useState<'default' | 'name'>('default');
   const [viewMode, setViewMode] = useState<'list' | 'grid'>(() => {
     const saved = localStorage.getItem('liveViewMode');
     return saved === 'grid' ? 'grid' : 'list';
@@ -69,9 +70,10 @@ export default function LivePage() {
       .finally(() => setLoading(false));
   }, [credentials, selectedLiveCategory, setLiveStreams, liveCategories.length]);
 
-  const filtered = liveStreams
+  let filtered = liveStreams
     .filter((s) => s.name.toLowerCase().includes(debouncedSearch.toLowerCase()))
     .filter((s) => !showFavsOnly || favorites.includes(s.stream_id));
+  if (sort === 'name') filtered = [...filtered].sort((a, b) => a.name.localeCompare(b.name));
 
   const { visibleCount, reset, sentinelRef, hasMore } = useInfiniteScroll(filtered.length);
   const visible = filtered.slice(0, visibleCount);
@@ -110,6 +112,21 @@ export default function LivePage() {
           >
             <Star className={`${isTV ? 'w-5 h-5' : 'w-3.5 h-3.5'} ${showFavsOnly ? 'fill-amber-400' : ''}`} />
             {t('live.favorites')}
+          </button>
+
+          {/* Sort toggle */}
+          <button
+            onClick={() => { playClick(); setSort((s) => s === 'default' ? 'name' : 'default'); }}
+            className={`flex items-center gap-1.5 rounded-xl font-medium transition-all border ${
+              isTV ? 'px-4 py-2 text-sm' : 'px-3 py-1.5 text-xs'
+            } ${
+              sort === 'name'
+                ? 'bg-accent/10 text-accent border-accent/15'
+                : 'text-text-secondary/60 hover:text-text-primary hover:bg-white/[0.03] border-transparent'
+            }`}
+          >
+            <ArrowUpDown className={isTV ? 'w-5 h-5' : 'w-3.5 h-3.5'} />
+            {sort === 'name' ? 'A-Z' : t('sort.default')}
           </button>
 
           {/* View mode toggle */}
