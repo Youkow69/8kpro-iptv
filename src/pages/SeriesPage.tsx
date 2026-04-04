@@ -13,6 +13,7 @@ import { useIsTV } from '../hooks/useIsTV';
 import { ArrowUpDown, Clapperboard, Search as SearchIcon } from 'lucide-react';
 import { playClick } from '../services/sounds';
 import { useDebounce } from '../hooks/useDebounce';
+import { useInfiniteScroll } from '../hooks/useInfiniteScroll';
 import ScrollToTop from '../components/ScrollToTop';
 
 type SortMode = 'default' | 'name' | 'rating';
@@ -32,7 +33,6 @@ export default function SeriesPage() {
   const [search, setSearch] = useState('');
   const [selectedSeries, setSelectedSeries] = useState<Series | null>(null);
   const [sort, setSort] = useState<SortMode>('default');
-  const [visibleCount, setVisibleCount] = useState(50);
   const debouncedSearch = useDebounce(search, 200);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -42,7 +42,11 @@ export default function SeriesPage() {
       getSeriesCategories(credentials)
         .then((cats) => {
           setSeriesCategories(cats);
-          if (!selectedSeriesCategory && cats.length > 0) {
+          if (selectedSeriesCategory) {
+            if (!cats.some((c) => c.category_id === selectedSeriesCategory)) {
+              setSelectedSeriesCategory(cats[0]?.category_id ?? null);
+            }
+          } else if (cats.length > 0) {
             setSelectedSeriesCategory(cats[0].category_id);
           }
         })
@@ -54,7 +58,7 @@ export default function SeriesPage() {
   useEffect(() => {
     if (selectedSeriesCategory === null && seriesCategories.length === 0) return;
     setLoading(true);
-    setVisibleCount(50);
+    reset();
     getSeriesList(credentials, selectedSeriesCategory ?? undefined)
       .then(setSeriesList)
       .catch(console.error)
@@ -68,8 +72,8 @@ export default function SeriesPage() {
   if (sort === 'name') filtered = [...filtered].sort((a, b) => a.name.localeCompare(b.name));
   else if (sort === 'rating') filtered = [...filtered].sort((a, b) => (parseFloat(b.rating || '0') - parseFloat(a.rating || '0')));
 
+  const { visibleCount, reset, sentinelRef, hasMore } = useInfiniteScroll(filtered.length);
   const visible = filtered.slice(0, visibleCount);
-  const hasMore = visibleCount < filtered.length;
 
   if (selectedSeries) {
     return <SeriesDetail series={selectedSeries} onBack={() => setSelectedSeries(null)} />;
@@ -95,21 +99,21 @@ export default function SeriesPage() {
       <div ref={scrollRef} className="flex-1 overflow-y-auto max-h-[calc(100vh-100px)] md:max-h-[calc(100vh-32px)]">
         {/* Sort bar */}
         <div className="flex items-center gap-2 mb-4 px-1">
-          <ArrowUpDown className="w-3.5 h-3.5 text-text-secondary" />
-          <div className="flex gap-1 bg-surface-light/50 rounded-lg p-0.5">
+          <ArrowUpDown className="w-3.5 h-3.5 text-text-secondary/40" />
+          <div className="flex gap-1 bg-white/[0.04] rounded-lg p-0.5 border border-white/[0.03]">
             {sortOptions.map((s) => (
               <button
                 key={s.id}
                 onClick={() => { playClick(); setSort(s.id); }}
                 className={`px-3 py-1 rounded-md text-[11px] font-medium transition-all ${
-                  sort === s.id ? 'bg-accent text-black' : 'text-text-secondary hover:text-text-primary'
+                  sort === s.id ? 'bg-accent text-black shadow-sm' : 'text-text-secondary/50 hover:text-text-primary'
                 }`}
               >
                 {s.label}
               </button>
             ))}
           </div>
-          <span className="ml-auto text-text-secondary text-xs flex items-center gap-1">
+          <span className="ml-auto text-text-secondary/40 text-xs flex items-center gap-1 font-medium">
             <Clapperboard className="w-3 h-3" /> {filtered.length}
           </span>
         </div>
@@ -136,11 +140,7 @@ export default function SeriesPage() {
                 onClick={() => { playClick(); setSelectedSeries(s); }}
               />
             ))}
-            {hasMore && (
-              <button onClick={() => setVisibleCount((c) => c + 50)} className="col-span-full py-3 text-sm text-accent hover:text-accent/80 font-medium">
-                Charger plus ({filtered.length - visibleCount} restants)
-              </button>
-            )}
+            {hasMore && <div ref={sentinelRef} className="col-span-full h-10" />}
           </div>
         )}
       </div>

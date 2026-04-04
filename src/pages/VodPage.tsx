@@ -13,6 +13,7 @@ import { useIsTV } from '../hooks/useIsTV';
 import { ArrowUpDown, Film, Search as SearchIcon } from 'lucide-react';
 import { playClick } from '../services/sounds';
 import { useDebounce } from '../hooks/useDebounce';
+import { useInfiniteScroll } from '../hooks/useInfiniteScroll';
 import ScrollToTop from '../components/ScrollToTop';
 
 type SortMode = 'default' | 'name' | 'rating' | 'year';
@@ -33,7 +34,6 @@ export default function VodPage() {
   const [search, setSearch] = useState('');
   const [selectedVod, setSelectedVod] = useState<VodStream | null>(null);
   const [sort, setSort] = useState<SortMode>('default');
-  const [visibleCount, setVisibleCount] = useState(50);
   const debouncedSearch = useDebounce(search, 200);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -43,7 +43,11 @@ export default function VodPage() {
       getVodCategories(credentials)
         .then((cats) => {
           setVodCategories(cats);
-          if (!selectedVodCategory && cats.length > 0) {
+          if (selectedVodCategory) {
+            if (!cats.some((c) => c.category_id === selectedVodCategory)) {
+              setSelectedVodCategory(cats[0]?.category_id ?? null);
+            }
+          } else if (cats.length > 0) {
             setSelectedVodCategory(cats[0].category_id);
           }
         })
@@ -55,7 +59,7 @@ export default function VodPage() {
   useEffect(() => {
     if (selectedVodCategory === null && vodCategories.length === 0) return;
     setLoading(true);
-    setVisibleCount(50);
+    reset();
     getVodStreams(credentials, selectedVodCategory ?? undefined)
       .then(setVodStreams)
       .catch(console.error)
@@ -70,8 +74,8 @@ export default function VodPage() {
   else if (sort === 'rating') filtered = [...filtered].sort((a, b) => (parseFloat(b.rating || '0') - parseFloat(a.rating || '0')));
   else if (sort === 'year') filtered = [...filtered].sort((a, b) => (b.year || '').localeCompare(a.year || ''));
 
+  const { visibleCount, reset, sentinelRef, hasMore } = useInfiniteScroll(filtered.length);
   const visible = filtered.slice(0, visibleCount);
-  const hasMore = visibleCount < filtered.length;
 
   const handlePlay = (vod: VodStream) => {
     const url = buildVodStreamUrl(credentials, vod.stream_id, vod.container_extension || 'mp4');
@@ -150,11 +154,7 @@ export default function VodPage() {
                 onClick={() => { playClick(); setSelectedVod(vod); }}
               />
             ))}
-            {hasMore && (
-              <button onClick={() => setVisibleCount((c) => c + 50)} className="col-span-full py-3 text-sm text-accent hover:text-accent/80 font-medium">
-                Charger plus ({filtered.length - visibleCount} restants)
-              </button>
-            )}
+            {hasMore && <div ref={sentinelRef} className="col-span-full h-10" />}
           </div>
         )}
       </div>

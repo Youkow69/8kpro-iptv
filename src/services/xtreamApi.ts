@@ -9,6 +9,7 @@ import type {
   SeriesInfo,
 } from '../types/xtream';
 import { getSecureHeaders } from './security';
+import { cachedFetch } from './apiCache';
 
 function isNative(): boolean {
   // Check Capacitor bridge
@@ -65,8 +66,10 @@ export async function authenticate(creds: XtreamCredentials): Promise<AuthRespon
 }
 
 export async function getLiveCategories(creds: XtreamCredentials): Promise<Category[]> {
-  const { data } = await secureAxios.get<Category[]>(proxyUrl(creds, { action: 'get_live_categories' }));
-  return data;
+  return cachedFetch(`live_cats_${creds.username}`, async () => {
+    const { data } = await secureAxios.get<Category[]>(proxyUrl(creds, { action: 'get_live_categories' }));
+    return data;
+  });
 }
 
 function fixIcons<T extends { stream_icon?: string; cover?: string }>(items: T[]): T[] {
@@ -85,8 +88,10 @@ export async function getLiveStreams(creds: XtreamCredentials, categoryId?: stri
 }
 
 export async function getVodCategories(creds: XtreamCredentials): Promise<Category[]> {
-  const { data } = await secureAxios.get<Category[]>(proxyUrl(creds, { action: 'get_vod_categories' }));
-  return data;
+  return cachedFetch(`vod_cats_${creds.username}`, async () => {
+    const { data } = await secureAxios.get<Category[]>(proxyUrl(creds, { action: 'get_vod_categories' }));
+    return data;
+  });
 }
 
 export async function getVodStreams(creds: XtreamCredentials, categoryId?: string): Promise<VodStream[]> {
@@ -97,8 +102,10 @@ export async function getVodStreams(creds: XtreamCredentials, categoryId?: strin
 }
 
 export async function getSeriesCategories(creds: XtreamCredentials): Promise<Category[]> {
-  const { data } = await secureAxios.get<Category[]>(proxyUrl(creds, { action: 'get_series_categories' }));
-  return data;
+  return cachedFetch(`series_cats_${creds.username}`, async () => {
+    const { data } = await secureAxios.get<Category[]>(proxyUrl(creds, { action: 'get_series_categories' }));
+    return data;
+  });
 }
 
 export async function getSeriesList(creds: XtreamCredentials, categoryId?: string): Promise<Series[]> {

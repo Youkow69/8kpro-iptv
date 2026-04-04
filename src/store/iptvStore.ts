@@ -61,24 +61,36 @@ function loadFavorites(): number[] {
 export const useIptvStore = create<IptvState>((set, get) => ({
   liveCategories: [],
   liveStreams: [],
-  selectedLiveCategory: null,
+  selectedLiveCategory: localStorage.getItem('iptv_last_live_cat') || null,
   setLiveCategories: (liveCategories) => set({ liveCategories }),
   setLiveStreams: (liveStreams) => set({ liveStreams }),
-  setSelectedLiveCategory: (selectedLiveCategory) => set({ selectedLiveCategory }),
+  setSelectedLiveCategory: (id) => {
+    if (id) localStorage.setItem('iptv_last_live_cat', id);
+    else localStorage.removeItem('iptv_last_live_cat');
+    set({ selectedLiveCategory: id });
+  },
 
   vodCategories: [],
   vodStreams: [],
-  selectedVodCategory: null,
+  selectedVodCategory: localStorage.getItem('iptv_last_vod_cat') || null,
   setVodCategories: (vodCategories) => set({ vodCategories }),
   setVodStreams: (vodStreams) => set({ vodStreams }),
-  setSelectedVodCategory: (selectedVodCategory) => set({ selectedVodCategory }),
+  setSelectedVodCategory: (id) => {
+    if (id) localStorage.setItem('iptv_last_vod_cat', id);
+    else localStorage.removeItem('iptv_last_vod_cat');
+    set({ selectedVodCategory: id });
+  },
 
   seriesCategories: [],
   seriesList: [],
-  selectedSeriesCategory: null,
+  selectedSeriesCategory: localStorage.getItem('iptv_last_series_cat') || null,
   setSeriesCategories: (seriesCategories) => set({ seriesCategories }),
   setSeriesList: (seriesList) => set({ seriesList }),
-  setSelectedSeriesCategory: (selectedSeriesCategory) => set({ selectedSeriesCategory }),
+  setSelectedSeriesCategory: (id) => {
+    if (id) localStorage.setItem('iptv_last_series_cat', id);
+    else localStorage.removeItem('iptv_last_series_cat');
+    set({ selectedSeriesCategory: id });
+  },
 
   playerUrl: null,
   playerTitle: null,

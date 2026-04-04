@@ -1,5 +1,5 @@
-import { useRef, useCallback } from 'react';
-import { Search, Loader2, Layers } from 'lucide-react';
+import { useRef, useCallback, useState } from 'react';
+import { Search, Loader2, Layers, AlertTriangle } from 'lucide-react';
 import type { Category } from '../types/xtream';
 import { useIsTV } from '../hooks/useIsTV';
 import ChannelLogo from './ChannelLogo';
@@ -25,9 +25,41 @@ interface Props {
 
 export default function CategoryList({ categories, selected, onSelect, search, onSearch, searchPlaceholder, loading }: Props) {
   const isTV = useIsTV();
+  const [showAllWarning, setShowAllWarning] = useState(false);
+
+  const handleSelectAll = () => {
+    if (selected !== null) {
+      setShowAllWarning(true);
+    }
+  };
+
+  const confirmSelectAll = () => {
+    setShowAllWarning(false);
+    playNav();
+    onSelect(null);
+  };
 
   return (
     <>
+      {/* Warning dialog for "Tous" */}
+      {showAllWarning && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={() => setShowAllWarning(false)}>
+          <div className="bg-surface border border-white/[0.08] rounded-2xl p-5 max-w-xs w-full shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
+                <AlertTriangle className="w-5 h-5 text-amber-400" />
+              </div>
+              <h3 className="text-text-primary font-semibold text-sm">Charger tout ?</h3>
+            </div>
+            <p className="text-text-secondary text-xs mb-4">Cela peut prendre du temps et consommer beaucoup de données.</p>
+            <div className="flex gap-2">
+              <button onClick={() => setShowAllWarning(false)} className="flex-1 px-3 py-2 rounded-xl text-xs font-medium text-text-secondary bg-white/[0.04] hover:bg-white/[0.08] transition">Annuler</button>
+              <button onClick={confirmSelectAll} className="flex-1 px-3 py-2 rounded-xl text-xs font-medium text-black bg-accent hover:bg-accent/90 transition">Confirmer</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* MOBILE: horizontal scrollable categories */}
       <div className="md:hidden flex flex-col gap-2">
         {/* Search bar */}
@@ -47,7 +79,7 @@ export default function CategoryList({ categories, selected, onSelect, search, o
             <Loader2 className="w-5 h-5 text-accent animate-spin mx-auto" />
           ) : (<>
               <button
-                onClick={() => { playNav(); onSelect(null); }}
+                onClick={handleSelectAll}
                 className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap ${
                   selected === null
                     ? 'bg-accent text-black shadow-sm shadow-accent/20'
@@ -114,7 +146,7 @@ export default function CategoryList({ categories, selected, onSelect, search, o
             </div>
           ) : (<>
               <button
-                onClick={() => { playNav(); onSelect(null); }}
+                onClick={handleSelectAll}
                 className={`w-full text-left rounded-xl transition-all flex items-center group ${
                   isTV ? 'text-base px-4 py-3 gap-3' : 'text-sm px-3 py-2.5 gap-2.5'
                 } ${

@@ -13,6 +13,7 @@ import { playClick } from '../services/sounds';
 import ChannelLogo from '../components/ChannelLogo';
 import DragonBallAura from '../components/DragonBallAura';
 import { useDebounce } from '../hooks/useDebounce';
+import { useInfiniteScroll } from '../hooks/useInfiniteScroll';
 import ScrollToTop from '../components/ScrollToTop';
 
 export default function LivePage() {
@@ -35,7 +36,6 @@ export default function LivePage() {
     const saved = localStorage.getItem('liveViewMode');
     return saved === 'grid' ? 'grid' : 'list';
   });
-  const [visibleCount, setVisibleCount] = useState(50);
   const debouncedSearch = useDebounce(search, 200);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -45,7 +45,12 @@ export default function LivePage() {
       getLiveCategories(credentials)
         .then((cats) => {
           setLiveCategories(cats);
-          if (!selectedLiveCategory && cats.length > 0) {
+          if (selectedLiveCategory) {
+            // Verify saved category still exists
+            if (!cats.some((c) => c.category_id === selectedLiveCategory)) {
+              setSelectedLiveCategory(cats[0]?.category_id ?? null);
+            }
+          } else if (cats.length > 0) {
             setSelectedLiveCategory(cats[0].category_id);
           }
         })
@@ -55,9 +60,9 @@ export default function LivePage() {
   }, [credentials, liveCategories.length, setLiveCategories, selectedLiveCategory, setSelectedLiveCategory]);
 
   useEffect(() => {
-    if (selectedLiveCategory === null && liveCategories.length === 0) return; // Wait for categories to load first
+    if (selectedLiveCategory === null && liveCategories.length === 0) return;
     setLoading(true);
-    setVisibleCount(50);
+    reset();
     getLiveStreams(credentials, selectedLiveCategory ?? undefined)
       .then(setLiveStreams)
       .catch(console.error)
@@ -68,8 +73,8 @@ export default function LivePage() {
     .filter((s) => s.name.toLowerCase().includes(debouncedSearch.toLowerCase()))
     .filter((s) => !showFavsOnly || favorites.includes(s.stream_id));
 
+  const { visibleCount, reset, sentinelRef, hasMore } = useInfiniteScroll(filtered.length);
   const visible = filtered.slice(0, visibleCount);
-  const hasMore = visibleCount < filtered.length;
 
   const handlePlay = (stream: typeof liveStreams[0]) => {
     playClick();
@@ -149,11 +154,7 @@ export default function LivePage() {
                   index={i}
                 />
               ))}
-              {hasMore && (
-                <button onClick={() => setVisibleCount((c) => c + 50)} className="w-full py-3 text-sm text-accent hover:text-accent/80 font-medium">
-                  Charger plus ({filtered.length - visibleCount} restants)
-                </button>
-              )}
+              {hasMore && <div ref={sentinelRef} className="h-10" />}
             </div>
           ) : (
             <div className={`grid gap-3 p-4 ${
@@ -170,7 +171,6 @@ export default function LivePage() {
                   }`}
                 >
                   <div className="relative w-14 h-14">
-                    {/* Dragon Ball aura */}
                     <DragonBallAura streamId={stream.stream_id} size="xs" />
                     <div className="relative w-14 h-14 rounded-xl overflow-hidden flex items-center justify-center shrink-0"
                       style={{ zIndex: 1 }}
@@ -190,11 +190,7 @@ export default function LivePage() {
                   )}
                 </button>
               ))}
-              {hasMore && (
-                <button onClick={() => setVisibleCount((c) => c + 50)} className="col-span-full py-3 text-sm text-accent hover:text-accent/80 font-medium">
-                  Charger plus ({filtered.length - visibleCount} restants)
-                </button>
-              )}
+              {hasMore && <div ref={sentinelRef} className="col-span-full h-10" />}
             </div>
           )}
         </div>
