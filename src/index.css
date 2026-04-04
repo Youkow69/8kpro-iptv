@@ -578,3 +578,164 @@ video {
   pointer-events: none;
   animation: subtle-breathe 6s ease-in-out infinite;
 }
+
+/* === NEW GENERAL ANIMATIONS === */
+
+/* Quality badge pop-in */
+@keyframes badge-pop {
+  0% { transform: scale(0) rotate(-15deg); opacity: 0; }
+  60% { transform: scale(1.2) rotate(3deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+.channel-card span[class*="text-\[8px\]"] {
+  animation: badge-pop 0.4s cubic-bezier(0.22, 1, 0.36, 1) 0.15s both;
+}
+
+/* Category button selection bounce */
+@keyframes select-bounce {
+  0% { transform: scale(1); }
+  40% { transform: scale(0.93); }
+  70% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+.category-selected {
+  animation: select-bounce 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Poster grid stagger entrance with 3D */
+@keyframes poster-entrance {
+  0% { transform: scale(0.85) translateY(20px); opacity: 0; filter: blur(4px); }
+  100% { transform: scale(1) translateY(0); opacity: 1; filter: blur(0); }
+}
+.stagger-grid > * {
+  animation: poster-entrance 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.stagger-grid > *:nth-child(1) { animation-delay: 0ms; }
+.stagger-grid > *:nth-child(2) { animation-delay: 30ms; }
+.stagger-grid > *:nth-child(3) { animation-delay: 60ms; }
+.stagger-grid > *:nth-child(4) { animation-delay: 90ms; }
+.stagger-grid > *:nth-child(5) { animation-delay: 120ms; }
+.stagger-grid > *:nth-child(6) { animation-delay: 150ms; }
+.stagger-grid > *:nth-child(7) { animation-delay: 180ms; }
+.stagger-grid > *:nth-child(8) { animation-delay: 210ms; }
+.stagger-grid > *:nth-child(9) { animation-delay: 240ms; }
+.stagger-grid > *:nth-child(10) { animation-delay: 270ms; }
+.stagger-grid > *:nth-child(11) { animation-delay: 300ms; }
+.stagger-grid > *:nth-child(12) { animation-delay: 330ms; }
+
+/* Search input focus glow */
+@keyframes input-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(229, 160, 13, 0); }
+  50% { box-shadow: 0 0 12px rgba(229, 160, 13, 0.15); }
+}
+input:focus {
+  animation: input-glow 2s ease-in-out infinite;
+}
+
+/* Sidebar link hover trail */
+@keyframes link-glow-slide {
+  0% { background-position: -100% 0; }
+  100% { background-position: 200% 0; }
+}
+aside a:hover,
+aside button:hover {
+  background-image: linear-gradient(90deg, transparent 0%, rgba(229,160,13,0.06) 50%, transparent 100%);
+  background-size: 200% 100%;
+  animation: link-glow-slide 1.5s ease-in-out;
+}
+
+/* Player channel switch cross-fade */
+@keyframes channel-switch {
+  0% { opacity: 1; transform: scale(1); }
+  30% { opacity: 0.3; transform: scale(0.98); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+/* Notification/toast slide-in */
+@keyframes toast-in {
+  0% { transform: translateY(-100%) scale(0.95); opacity: 0; }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+.toast-enter {
+  animation: toast-in 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Smooth counter number flip */
+@keyframes number-flip {
+  0% { transform: translateY(100%); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+.number-flip {
+  animation: number-flip 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+  display: inline-block;
+}
+
+/* Volume slider thumb pulse */
+@keyframes thumb-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(229, 160, 13, 0.4); }
+  50% { box-shadow: 0 0 0 6px rgba(229, 160, 13, 0); }
+}
+
+/* Favorite toggle heart beat */
+@keyframes heart-beat {
+  0% { transform: scale(1); }
+  15% { transform: scale(1.25); }
+  30% { transform: scale(0.95); }
+  45% { transform: scale(1.15); }
+  60% { transform: scale(1); }
+}
+.fav-active {
+  animation: heart-beat 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Smooth skeleton wave (enhanced) */
+@keyframes skeleton-wave {
+  0% { background-position: -200% 0; opacity: 0.5; }
+  50% { opacity: 0.8; }
+  100% { background-position: 200% 0; opacity: 0.5; }
+}
+
+/* Mobile category chip scroll hint */
+@keyframes scroll-hint {
+  0% { transform: translateX(0); }
+  50% { transform: translateX(-8px); }
+  100% { transform: translateX(0); }
+}
+.scroll-hint-arrow {
+  animation: scroll-hint 1.5s ease-in-out 2;
+}
+
+/* Glass panel entrance */
+@keyframes glass-rise {
+  0% { transform: translateY(12px); opacity: 0; backdrop-filter: blur(0); }
+  100% { transform: translateY(0); opacity: 1; backdrop-filter: blur(24px); }
+}
+.glass-enter {
+  animation: glass-rise 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Accent underline grow */
+@keyframes underline-grow {
+  0% { transform: scaleX(0); }
+  100% { transform: scaleX(1); }
+}
+.underline-animated {
+  transform-origin: left;
+  animation: underline-grow 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Mobile bottom nav icon bounce on tap */
+@media (hover: none) {
+  nav a:active svg {
+    animation: star-pop 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+}
+
+/* Reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -86,7 +86,7 @@ export default memo(function ChannelCard({ stream, onClick, index }: Props) {
             : 'text-white/20 hover:text-amber-400 focus-visible:text-amber-400 fav-star-touch opacity-0 group-hover:opacity-100 group-focus-within:opacity-100'
         }`}
       >
-        <Star className={`${isTV ? 'w-5 h-5' : 'w-4 h-4'} ${isFav ? 'fill-amber-400' : ''}`} />
+        <Star className={`${isTV ? 'w-5 h-5' : 'w-4 h-4'} ${isFav ? 'fill-amber-400 fav-active' : ''}`} />
       </button>
     </div>
   );

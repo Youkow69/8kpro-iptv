@@ -97,7 +97,7 @@ export default function LivePage() {
         searchPlaceholder={t('live.search')}
         loading={loadingCats}
       />
-      <div className="flex-1 glass rounded-xl overflow-hidden flex flex-col max-h-[calc(100vh-100px)] md:max-h-[calc(100vh-32px)]">
+      <div className="flex-1 glass glass-enter rounded-xl overflow-hidden flex flex-col max-h-[calc(100vh-100px)] md:max-h-[calc(100vh-32px)]">
         {/* Filter bar */}
         <div className={`flex items-center gap-2 border-b border-white/[0.04] ${isTV ? 'px-5 py-3' : 'px-4 py-2.5'}`}>
           <button
@@ -174,7 +174,7 @@ export default function LivePage() {
               {hasMore && <div ref={sentinelRef} className="h-10" />}
             </div>
           ) : (
-            <div className={`grid gap-3 p-4 ${
+            <div className={`grid gap-3 p-4 stagger-grid ${
               isTV ? 'grid-cols-3 lg:grid-cols-4 xl:grid-cols-5' : 'grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6'
             }`}>
               {visible.map((stream) => (

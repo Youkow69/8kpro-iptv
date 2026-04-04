@@ -128,7 +128,7 @@ export default function SeriesPage() {
             <p>{t('series.noResults')}</p>
           </div>
         ) : (
-          <div className={`grid gap-3 stagger-children ${
+          <div className={`grid gap-3 stagger-grid ${
             isTV ? 'grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' : 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5'
           }`}>
             {visible.map((s) => (
