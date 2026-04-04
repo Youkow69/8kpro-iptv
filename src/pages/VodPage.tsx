@@ -42,7 +42,9 @@ export default function VodPage() {
       getVodCategories(credentials)
         .then((cats) => {
           setVodCategories(cats);
-          // Default to "Tous" (null)
+          if (!selectedVodCategory && cats.length > 0) {
+            setSelectedVodCategory(cats[0].category_id);
+          }
         })
         .catch(console.error)
         .finally(() => setLoadingCats(false));

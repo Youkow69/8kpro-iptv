@@ -44,7 +44,9 @@ export default function LivePage() {
       getLiveCategories(credentials)
         .then((cats) => {
           setLiveCategories(cats);
-          // Default to "Tous" (null) — loads all streams
+          if (!selectedLiveCategory && cats.length > 0) {
+            setSelectedLiveCategory(cats[0].category_id);
+          }
         })
         .catch(console.error)
         .finally(() => setLoadingCats(false));

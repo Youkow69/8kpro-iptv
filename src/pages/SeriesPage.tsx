@@ -41,7 +41,9 @@ export default function SeriesPage() {
       getSeriesCategories(credentials)
         .then((cats) => {
           setSeriesCategories(cats);
-          // Default to "Tous" (null)
+          if (!selectedSeriesCategory && cats.length > 0) {
+            setSelectedSeriesCategory(cats[0].category_id);
+          }
         })
         .catch(console.error)
         .finally(() => setLoadingCats(false));
