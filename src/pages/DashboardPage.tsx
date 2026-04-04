@@ -3,6 +3,7 @@ import { useAuthStore } from '../store/authStore';
 import { useIptvStore } from '../store/iptvStore';
 import {
   getVodStreams, getSeriesList, getLiveStreams,
+  getLiveCategories, getVodCategories, getSeriesCategories,
   buildLiveStreamUrl, buildVodStreamUrl,
 } from '../services/xtreamApi';
 import { epgService, type EpgProgram } from '../services/epgService';
@@ -231,6 +232,9 @@ export default function DashboardPage() {
   const [topChannels, setTopChannels] = useState<LiveStream[]>([]);
   const [history] = useState<WatchHistoryItem[]>(loadHistory());
   const [epgData, setEpgData] = useState<Map<string, EpgProgram>>(new Map());
+  const [liveCatCount, setLiveCatCount] = useState(0);
+  const [vodCatCount, setVodCatCount] = useState(0);
+  const [seriesCatCount, setSeriesCatCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -255,11 +259,26 @@ export default function DashboardPage() {
       setLoading(false);
     }
 
-    // Load each section independently — show as soon as ready
-    async function loadLive() {
+    // Load category counts (lightweight ~40-77KB) instead of all streams (18-66MB)
+    async function loadCounts() {
+      const [liveCats, vodCats, seriesCats] = await Promise.all([
+        getLiveCategories(credentials).catch(() => []),
+        getVodCategories(credentials).catch(() => []),
+        getSeriesCategories(credentials).catch(() => []),
+      ]);
+      if (!mounted) return;
+      setLiveCatCount(liveCats.length);
+      setVodCatCount(vodCats.length);
+      setSeriesCatCount(seriesCats.length);
+      return liveCats;
+    }
+
+    // Load only first category streams for carousels (small payload)
+    async function loadLive(cats: any[]) {
       if (liveStreams.length > 0) return;
       try {
-        const live = await getLiveStreams(credentials);
+        const catId = cats.length > 0 ? cats[0].category_id : undefined;
+        const live = await getLiveStreams(credentials, catId);
         if (!mounted) return;
         setLiveStreams(live);
         const favCh = live.filter((s) => favorites.includes(s.stream_id));
@@ -271,7 +290,9 @@ export default function DashboardPage() {
     async function loadVod() {
       if (cachedVod.length > 0) return;
       try {
-        const vod = await getVodStreams(credentials);
+        const vodCats = await getVodCategories(credentials).catch(() => []);
+        const catId = vodCats.length > 0 ? vodCats[0].category_id : undefined;
+        const vod = await getVodStreams(credentials, catId);
         if (!mounted) return;
         setVodStreams(vod);
         const sorted = [...vod].sort((a, b) => parseInt(b.added || '0') - parseInt(a.added || '0'));
@@ -282,7 +303,9 @@ export default function DashboardPage() {
     async function loadSeries() {
       if (cachedSeries.length > 0) return;
       try {
-        const series = await getSeriesList(credentials);
+        const serCats = await getSeriesCategories(credentials).catch(() => []);
+        const catId = serCats.length > 0 ? serCats[0].category_id : undefined;
+        const series = await getSeriesList(credentials, catId);
         if (!mounted) return;
         setSeriesList(series);
         const sorted = [...series].sort((a, b) => (b.rating_5based || 0) - (a.rating_5based || 0));
@@ -290,8 +313,10 @@ export default function DashboardPage() {
       } catch { /* ignore */ }
     }
 
-    // Fire all in parallel, each updates UI independently
-    Promise.all([loadLive(), loadVod(), loadSeries()]).finally(() => {
+    // Load counts first, then carousels in parallel
+    loadCounts().then((liveCats) => {
+      return Promise.all([loadLive(liveCats || []), loadVod(), loadSeries()]);
+    }).finally(() => {
       if (mounted) setLoading(false);
     });
 
@@ -375,9 +400,9 @@ export default function DashboardPage() {
             {/* Quick stats */}
             <div className="flex gap-5 mt-6">
               {[
-                { icon: Radio, color: 'red', bg: 'red-500/10', count: topChannels.length, label: t('dash.channels'), dbId: 1 },
-                { icon: Film, color: 'blue', bg: 'blue-500/10', count: recentVod.length, label: t('dash.movies'), dbId: 8 },
-                { icon: Clapperboard, color: 'emerald', bg: 'emerald-500/10', count: trendingSeries.length, label: t('dash.series'), dbId: 15 },
+                { icon: Radio, color: 'red', bg: 'red-500/10', count: liveCatCount, label: t('dash.channels'), dbId: 1 },
+                { icon: Film, color: 'blue', bg: 'blue-500/10', count: vodCatCount, label: t('dash.movies'), dbId: 8 },
+                { icon: Clapperboard, color: 'emerald', bg: 'emerald-500/10', count: seriesCatCount, label: t('dash.series'), dbId: 15 },
               ].map((stat) => (
                 <div key={stat.label} className="flex items-center gap-2.5 group">
                   <div className="relative w-9 h-9">
