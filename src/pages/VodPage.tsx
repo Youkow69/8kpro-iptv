@@ -53,13 +53,14 @@ export default function VodPage() {
   }, [credentials, vodCategories.length, setVodCategories, selectedVodCategory, setSelectedVodCategory]);
 
   useEffect(() => {
+    if (selectedVodCategory === null && vodCategories.length === 0) return;
     setLoading(true);
     setVisibleCount(50);
     getVodStreams(credentials, selectedVodCategory ?? undefined)
       .then(setVodStreams)
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, [credentials, selectedVodCategory, setVodStreams]);
+  }, [credentials, selectedVodCategory, setVodStreams, vodCategories.length]);
 
   let filtered = vodStreams.filter((v) =>
     v.name.toLowerCase().includes(debouncedSearch.toLowerCase())

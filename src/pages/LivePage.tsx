@@ -55,13 +55,14 @@ export default function LivePage() {
   }, [credentials, liveCategories.length, setLiveCategories, selectedLiveCategory, setSelectedLiveCategory]);
 
   useEffect(() => {
+    if (selectedLiveCategory === null && liveCategories.length === 0) return; // Wait for categories to load first
     setLoading(true);
     setVisibleCount(50);
     getLiveStreams(credentials, selectedLiveCategory ?? undefined)
       .then(setLiveStreams)
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, [credentials, selectedLiveCategory, setLiveStreams]);
+  }, [credentials, selectedLiveCategory, setLiveStreams, liveCategories.length]);
 
   const filtered = liveStreams
     .filter((s) => s.name.toLowerCase().includes(debouncedSearch.toLowerCase()))

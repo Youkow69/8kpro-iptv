@@ -52,13 +52,14 @@ export default function SeriesPage() {
   }, [credentials, seriesCategories.length, setSeriesCategories, selectedSeriesCategory, setSelectedSeriesCategory]);
 
   useEffect(() => {
+    if (selectedSeriesCategory === null && seriesCategories.length === 0) return;
     setLoading(true);
     setVisibleCount(50);
     getSeriesList(credentials, selectedSeriesCategory ?? undefined)
       .then(setSeriesList)
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, [credentials, selectedSeriesCategory, setSeriesList]);
+  }, [credentials, selectedSeriesCategory, setSeriesList, seriesCategories.length]);
 
   let filtered = seriesList.filter((s) =>
     s.name.toLowerCase().includes(debouncedSearch.toLowerCase())
