@@ -33,6 +33,7 @@ export default function VodPage() {
   const [search, setSearch] = useState('');
   const [selectedVod, setSelectedVod] = useState<VodStream | null>(null);
   const [sort, setSort] = useState<SortMode>('default');
+  const [visibleCount, setVisibleCount] = useState(50);
   const debouncedSearch = useDebounce(search, 200);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -53,6 +54,7 @@ export default function VodPage() {
 
   useEffect(() => {
     setLoading(true);
+    setVisibleCount(50);
     getVodStreams(credentials, selectedVodCategory ?? undefined)
       .then(setVodStreams)
       .catch(console.error)
@@ -66,6 +68,9 @@ export default function VodPage() {
   if (sort === 'name') filtered = [...filtered].sort((a, b) => a.name.localeCompare(b.name));
   else if (sort === 'rating') filtered = [...filtered].sort((a, b) => (parseFloat(b.rating || '0') - parseFloat(a.rating || '0')));
   else if (sort === 'year') filtered = [...filtered].sort((a, b) => (b.year || '').localeCompare(a.year || ''));
+
+  const visible = filtered.slice(0, visibleCount);
+  const hasMore = visibleCount < filtered.length;
 
   const handlePlay = (vod: VodStream) => {
     const url = buildVodStreamUrl(credentials, vod.stream_id, vod.container_extension || 'mp4');
@@ -135,7 +140,7 @@ export default function VodPage() {
           <div className={`grid gap-3 stagger-children ${
             isTV ? 'grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' : 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5'
           }`}>
-            {filtered.map((vod) => (
+            {visible.map((vod) => (
               <MediaCard
                 key={vod.stream_id}
                 name={vod.name}
@@ -144,6 +149,11 @@ export default function VodPage() {
                 onClick={() => { playClick(); setSelectedVod(vod); }}
               />
             ))}
+            {hasMore && (
+              <button onClick={() => setVisibleCount((c) => c + 50)} className="col-span-full py-3 text-sm text-accent hover:text-accent/80 font-medium">
+                Charger plus ({filtered.length - visibleCount} restants)
+              </button>
+            )}
           </div>
         )}
       </div>

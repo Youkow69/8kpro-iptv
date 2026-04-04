@@ -32,6 +32,7 @@ export default function SeriesPage() {
   const [search, setSearch] = useState('');
   const [selectedSeries, setSelectedSeries] = useState<Series | null>(null);
   const [sort, setSort] = useState<SortMode>('default');
+  const [visibleCount, setVisibleCount] = useState(50);
   const debouncedSearch = useDebounce(search, 200);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -52,6 +53,7 @@ export default function SeriesPage() {
 
   useEffect(() => {
     setLoading(true);
+    setVisibleCount(50);
     getSeriesList(credentials, selectedSeriesCategory ?? undefined)
       .then(setSeriesList)
       .catch(console.error)
@@ -64,6 +66,9 @@ export default function SeriesPage() {
 
   if (sort === 'name') filtered = [...filtered].sort((a, b) => a.name.localeCompare(b.name));
   else if (sort === 'rating') filtered = [...filtered].sort((a, b) => (parseFloat(b.rating || '0') - parseFloat(a.rating || '0')));
+
+  const visible = filtered.slice(0, visibleCount);
+  const hasMore = visibleCount < filtered.length;
 
   if (selectedSeries) {
     return <SeriesDetail series={selectedSeries} onBack={() => setSelectedSeries(null)} />;
@@ -121,7 +126,7 @@ export default function SeriesPage() {
           <div className={`grid gap-3 stagger-children ${
             isTV ? 'grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' : 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5'
           }`}>
-            {filtered.map((s) => (
+            {visible.map((s) => (
               <MediaCard
                 key={s.series_id}
                 name={s.name}
@@ -130,6 +135,11 @@ export default function SeriesPage() {
                 onClick={() => { playClick(); setSelectedSeries(s); }}
               />
             ))}
+            {hasMore && (
+              <button onClick={() => setVisibleCount((c) => c + 50)} className="col-span-full py-3 text-sm text-accent hover:text-accent/80 font-medium">
+                Charger plus ({filtered.length - visibleCount} restants)
+              </button>
+            )}
           </div>
         )}
       </div>

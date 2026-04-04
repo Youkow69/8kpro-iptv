@@ -35,6 +35,7 @@ export default function LivePage() {
     const saved = localStorage.getItem('liveViewMode');
     return saved === 'grid' ? 'grid' : 'list';
   });
+  const [visibleCount, setVisibleCount] = useState(50);
   const debouncedSearch = useDebounce(search, 200);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -55,6 +56,7 @@ export default function LivePage() {
 
   useEffect(() => {
     setLoading(true);
+    setVisibleCount(50);
     getLiveStreams(credentials, selectedLiveCategory ?? undefined)
       .then(setLiveStreams)
       .catch(console.error)
@@ -64,6 +66,9 @@ export default function LivePage() {
   const filtered = liveStreams
     .filter((s) => s.name.toLowerCase().includes(debouncedSearch.toLowerCase()))
     .filter((s) => !showFavsOnly || favorites.includes(s.stream_id));
+
+  const visible = filtered.slice(0, visibleCount);
+  const hasMore = visibleCount < filtered.length;
 
   const handlePlay = (stream: typeof liveStreams[0]) => {
     playClick();
@@ -134,7 +139,7 @@ export default function LivePage() {
             </div>
           ) : viewMode === 'list' ? (
             <div className="divide-y divide-white/[0.03] stagger-list">
-              {filtered.map((stream, i) => (
+              {visible.map((stream, i) => (
                 <ChannelCard
                   key={stream.stream_id}
                   stream={stream}
@@ -143,12 +148,17 @@ export default function LivePage() {
                   index={i}
                 />
               ))}
+              {hasMore && (
+                <button onClick={() => setVisibleCount((c) => c + 50)} className="w-full py-3 text-sm text-accent hover:text-accent/80 font-medium">
+                  Charger plus ({filtered.length - visibleCount} restants)
+                </button>
+              )}
             </div>
           ) : (
             <div className={`grid gap-3 p-4 ${
               isTV ? 'grid-cols-3 lg:grid-cols-4 xl:grid-cols-5' : 'grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6'
             }`}>
-              {filtered.map((stream) => (
+              {visible.map((stream) => (
                 <button
                   key={stream.stream_id}
                   onClick={() => handlePlay(stream)}
@@ -179,6 +189,11 @@ export default function LivePage() {
                   )}
                 </button>
               ))}
+              {hasMore && (
+                <button onClick={() => setVisibleCount((c) => c + 50)} className="col-span-full py-3 text-sm text-accent hover:text-accent/80 font-medium">
+                  Charger plus ({filtered.length - visibleCount} restants)
+                </button>
+              )}
             </div>
           )}
         </div>
