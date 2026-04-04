@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, memo } from 'react';
 
 interface Props {
   streamId: number;
@@ -9,7 +9,7 @@ interface Props {
  * Dragon Ball aura effect behind channel logos and category icons.
  * Pure CSS — no canvas, no performance hit on large lists.
  */
-export default function DragonBallAura({ streamId, size = 'md' }: Props) {
+export default memo(function DragonBallAura({ streamId, size = 'md' }: Props) {
   const starCount = useMemo(() => (streamId % 7) + 1, [streamId]);
   const delay = useMemo(() => (streamId % 20) * 0.15, [streamId]);
 
@@ -147,4 +147,4 @@ export default function DragonBallAura({ streamId, size = 'md' }: Props) {
       </div>
     </div>
   );
-}
+})

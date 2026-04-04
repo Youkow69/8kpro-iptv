@@ -1,4 +1,4 @@
-import { useRef, useCallback, useState } from 'react';
+import { useRef, useCallback, useState, memo } from 'react';
 import { Search, Loader2, Layers, AlertTriangle } from 'lucide-react';
 import type { Category } from '../types/xtream';
 import { useIsTV } from '../hooks/useIsTV';
@@ -193,7 +193,7 @@ export default function CategoryList({ categories, selected, onSelect, search, o
   );
 }
 
-function CategoryButton({ cat, isSelected, onSelect, isTV }: {
+const CategoryButton = memo(function CategoryButton({ cat, isSelected, onSelect, isTV }: {
   cat: Category;
   isSelected: boolean;
   onSelect: (id: string) => void;
@@ -232,4 +232,4 @@ function CategoryButton({ cat, isSelected, onSelect, isTV }: {
       {isSelected && <span className="w-1.5 h-1.5 bg-accent rounded-full shrink-0" />}
     </button>
   );
-}
+})

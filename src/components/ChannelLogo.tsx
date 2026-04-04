@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, memo } from 'react';
 
 // Known channel brand colors and abbreviations
 const BRAND_MAP: Record<string, { abbr: string; colors: [string, string] }> = {
@@ -162,7 +162,7 @@ interface ChannelLogoProps {
   className?: string;
 }
 
-export default function ChannelLogo({ name, size = 'md', className = '' }: ChannelLogoProps) {
+export default memo(function ChannelLogo({ name, size = 'md', className = '' }: ChannelLogoProps) {
   const { abbr, fontSize } = useMemo(() => {
     const brand = getBrandInfo(name);
     const hash = hashStr(name);
@@ -223,4 +223,4 @@ export default function ChannelLogo({ name, size = 'md', className = '' }: Chann
       </span>
     </div>
   );
-}
+})
