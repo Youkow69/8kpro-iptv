@@ -26,6 +26,11 @@ interface Props {
 export default function CategoryList({ categories, selected, onSelect, search, onSearch, searchPlaceholder, loading }: Props) {
   const isTV = useIsTV();
   const [showAllWarning, setShowAllWarning] = useState(false);
+  const [catFilter, setCatFilter] = useState('');
+
+  const filteredCategories = catFilter
+    ? categories.filter((c) => c.category_name.toLowerCase().includes(catFilter.toLowerCase()))
+    : categories;
 
   const handleSelectAll = () => {
     if (selected !== null) {
@@ -125,7 +130,8 @@ export default function CategoryList({ categories, selected, onSelect, search, o
             {categories.length}
           </span>
         </div>
-        <div className="relative mb-3">
+        {/* Search streams */}
+        <div className="relative mb-2">
           <Search className={`absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary/50 ${
             isTV ? 'w-5 h-5' : 'w-4 h-4'
           }`} />
@@ -139,6 +145,19 @@ export default function CategoryList({ categories, selected, onSelect, search, o
             }`}
           />
         </div>
+        {/* Filter categories */}
+        {categories.length > 20 && (
+          <div className="relative mb-3">
+            <Layers className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary/30 w-3.5 h-3.5" />
+            <input
+              type="text"
+              placeholder="Filtrer catégories..."
+              value={catFilter}
+              onChange={(e) => setCatFilter(e.target.value)}
+              className="w-full bg-surface-light/30 border border-surface-lighter/30 rounded-lg pl-8 pr-3 py-1.5 text-xs text-text-primary placeholder:text-text-secondary/30 focus:outline-none focus:border-accent/30 transition"
+            />
+          </div>
+        )}
         <div className={`overflow-y-auto flex-1 ${isTV ? 'space-y-1' : 'space-y-0.5'}`}>
           {loading ? (
             <div className="flex items-center justify-center py-6">
@@ -158,7 +177,7 @@ export default function CategoryList({ categories, selected, onSelect, search, o
                 <Layers className={`shrink-0 ${isTV ? 'w-5 h-5' : 'w-4 h-4'}`} />
                 <span className="truncate flex-1">Tous</span>
               </button>
-            {categories.map((cat) => (
+            {filteredCategories.map((cat) => (
               <CategoryButton
                 key={cat.category_id}
                 cat={cat}

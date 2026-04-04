@@ -7,6 +7,7 @@ import { useIptvStore } from '../store/iptvStore';
 import { Shield } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from '../i18n/useTranslation';
+import OfflineIndicator from './OfflineIndicator';
 
 export default function Layout() {
   useDpadNavigation();
@@ -28,6 +29,7 @@ export default function Layout() {
 
   return (
     <div className="flex min-h-screen bg-bg">
+      <OfflineIndicator />
       <Sidebar />
       <main className="flex-1 flex flex-col pb-16 md:pb-0 overflow-hidden">
         {/* Mobile top bar */}
