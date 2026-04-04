@@ -1,10 +1,24 @@
-import { useRef, memo } from 'react';
+import { useRef, useMemo, memo } from 'react';
 import { Star } from 'lucide-react';
 import ChannelLogo from './ChannelLogo';
 import DragonBallAura from './DragonBallAura';
 import { useIptvStore } from '../store/iptvStore';
 import { useIsTV } from '../hooks/useIsTV';
 import { playClick, playFavoriteAdd, playFavoriteRemove } from '../services/sounds';
+
+/** Extract quality tag from channel name */
+export function getQualityBadge(name: string): { label: string; color: string } | null {
+  const n = name.toLowerCase();
+  if (n.includes('⁸ᴷ') || n.includes('8k')) return { label: '8K', color: 'bg-purple-500/20 text-purple-300' };
+  if (n.includes('³⁸⁴⁰') || n.includes('3840')) return { label: '4K', color: 'bg-amber-500/20 text-amber-300' };
+  if (n.includes('⁴ᴷ') || n.includes('4k')) return { label: '4K', color: 'bg-amber-500/20 text-amber-300' };
+  if (n.includes('ᵁᴴᴰ') || n.includes('uhd')) return { label: 'UHD', color: 'bg-orange-500/20 text-orange-300' };
+  if (n.includes('ᶠᴴᴰ') || n.includes('fhd') || n.includes('1080')) return { label: 'FHD', color: 'bg-blue-500/20 text-blue-300' };
+  if (n.includes('ʰᵉᵛᶜ') || n.includes('hevc') || n.includes('h265')) return { label: 'HEVC', color: 'bg-teal-500/20 text-teal-300' };
+  if (n.includes('ᴿᴬᵂ') || n.includes('raw')) return { label: 'RAW', color: 'bg-slate-500/20 text-slate-300' };
+  if (n.includes('ᴴᴰ') || n.includes(' hd')) return { label: 'HD', color: 'bg-sky-500/20 text-sky-300' };
+  return null;
+}
 
 interface Props {
   stream: { stream_id: number; name: string; stream_icon?: string; epg_channel_id?: string };
@@ -18,6 +32,7 @@ export default memo(function ChannelCard({ stream, onClick, index }: Props) {
   const isFav = favorites.includes(stream.stream_id);
   const isTV = useIsTV();
   const ref = useRef<HTMLButtonElement>(null);
+  const quality = useMemo(() => getQualityBadge(stream.name), [stream.name]);
 
   return (
     <div
@@ -49,9 +64,16 @@ export default memo(function ChannelCard({ stream, onClick, index }: Props) {
       </div>
 
       <div className="flex-1 min-w-0">
-        <p className={`font-medium truncate channel-name-gradient ${isTV ? 'text-base' : 'text-sm'}`}>
-          {stream.name}
-        </p>
+        <div className="flex items-center gap-1.5">
+          <p className={`font-medium truncate channel-name-gradient ${isTV ? 'text-base' : 'text-sm'}`}>
+            {stream.name}
+          </p>
+          {quality && (
+            <span className={`shrink-0 text-[8px] font-bold px-1.5 py-0.5 rounded ${quality.color}`}>
+              {quality.label}
+            </span>
+          )}
+        </div>
       </div>
 
       <button

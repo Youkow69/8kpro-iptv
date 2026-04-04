@@ -14,6 +14,7 @@ import { useIsTV } from '../hooks/useIsTV';
 import { playChannelUp, playChannelDown, playClick, playFavoriteAdd, playFavoriteRemove } from '../services/sounds';
 import DragonBallAura from './DragonBallAura';
 import ChannelLogo from './ChannelLogo';
+import { getQualityBadge } from './ChannelCard';
 
 export default function Player() {
   const {
@@ -582,6 +583,7 @@ export default function Player() {
 
   // Swipe gestures for mobile channel switching (must be before early return)
   const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
+  const lastTapRef = useRef<number>(0);
 
   if (!playerUrl) return null;
 
@@ -601,15 +603,27 @@ export default function Player() {
     touchStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY, time: Date.now() };
   };
   const handleTouchEnd = (e: React.TouchEvent) => {
-    if (!touchStartRef.current || !isLive) return;
+    if (!touchStartRef.current) return;
     const dx = e.changedTouches[0].clientX - touchStartRef.current.x;
     const dy = e.changedTouches[0].clientY - touchStartRef.current.y;
     const dt = Date.now() - touchStartRef.current.time;
-    if (dt > 500 || Math.abs(dx) > Math.abs(dy)) return; // Too slow or horizontal
-    if (Math.abs(dy) > 60) { // Vertical swipe
-      navigateChannel(dy < 0 ? -1 : 1); // Swipe up = prev, swipe down = next
-    }
     touchStartRef.current = null;
+
+    // Double-tap to toggle fullscreen (any mode)
+    if (dt < 300 && Math.abs(dx) < 30 && Math.abs(dy) < 30) {
+      const now = Date.now();
+      if (now - lastTapRef.current < 350) {
+        lastTapRef.current = 0;
+        toggleFullscreen();
+        return;
+      }
+      lastTapRef.current = now;
+    }
+
+    if (!isLive || dt > 500 || Math.abs(dx) > Math.abs(dy)) return;
+    if (Math.abs(dy) > 60) {
+      navigateChannel(dy < 0 ? -1 : 1);
+    }
   };
 
   return (
@@ -642,6 +656,7 @@ export default function Player() {
             </span>
           )}
           <h3 className={`text-white font-medium truncate ${isTV ? 'text-lg' : 'text-sm'}`}>{playerTitle}</h3>
+          {playerTitle && (() => { const q = getQualityBadge(playerTitle); return q ? <span className={`shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded ${q.color}`}>{q.label}</span> : null; })()}
           {isLive && currentCategory && (
             <span className={`hidden sm:inline text-white/40 truncate ${isTV ? 'text-sm' : 'text-xs'}`}>
               {currentCategory.category_name}
